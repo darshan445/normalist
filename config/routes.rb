@@ -1,14 +1,22 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  require "sidekiq/web"
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  mount Sidekiq::Web => "/sidekiq" if Rails.env.development?
+
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  namespace :api do
+    namespace :v1 do
+      get "session", to: "sessions#show"
+      get "dashboard", to: "dashboard#show"
+    end
+  end
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # Shopify OAuth, webhooks (ShopifyApp::Engine)
+  mount ShopifyApp::Engine, at: "/"
+
+  get "/install", to: redirect { |_params, request|
+    query = request.query_string.presence
+    query ? "/login?#{query}" : "/login"
+  }
 end
