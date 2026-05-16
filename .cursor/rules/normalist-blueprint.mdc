@@ -1,0 +1,453 @@
+---
+alwaysApply: true
+---
+## Tech Stack
+
+### Core
+- **Language**: Ruby (latest stable)
+- **Framework**: Ruby on Rails 8 (full stack, not API-only — UI is server-rendered)
+- **Database**: PostgreSQL
+- **ORM**: ActiveRecord
+
+### Frontend
+- **Hotwire**: Turbo + Stimulus — all interactivity is handled via Hotwire, no separate JS framework
+- **Turbo Frames**: used for partial page updates (e.g. mapping UI loads results without full page reload)
+- **Turbo Streams**: used for real-time feedback during file processing (progress, results appearing live)
+- **Stimulus**: used for lightweight JS behaviour (search dropdowns, bulk select, form interactions)
+- **No React, No Vue, No separate SPA** — everything is server-rendered HTML with Hotwire enhancement
+
+### Background Processing
+- **Sidekiq**: all file processing runs asynchronously — never block the web request
+- **Redis**: Sidekiq queue backend, also used for caching where appropriate
+
+### AI
+- **Model**: Gemini 2.5 Flash
+- **Client**: Faraday for direct HTTP calls to Gemini API
+- **Usage**: column header detection only, snippet-based (first 10 rows), result cached after first run per supplier per merchant
+
+### File Processing
+- **CSV**: Ruby standard library `CSV`
+- **Excel**: `roo` gem (handles .xlsx cleanly)
+
+### Testing
+- **RSpec**: unit and integration tests
+- **FactoryBot**: test data factories
+- Each component must be independently testable with no platform dependency
+
+---
+
+## Core Principles
+
+- The core engine is ecosystem-agnostic. It knows nothing about Shopify, WooCommerce, or any platform.
+- Multi-tenant from day one. Every merchant's data is fully isolated. Every ActiveRecord query is scoped by merchant_id. No merchant can ever touch another merchant's data.
+- Platform fields exist in the schema from day one but are nullable. They are populated only when platform integration is built.
+- Design the data model for where we are going. Build the code for where we are now.
+- Gemini 2.5 Flash runs exactly once per supplier per merchant. After that the profile is cached and all future uploads bypass the AI entirely.
+- The mapping dictionary is permanent. Once a merchant maps a supplier code to a master SKU, that mapping is remembered forever and never asked again.
+- All file processing happens in Sidekiq jobs. Never process a file synchronously in a controller action.
+- All UI updates during and after file processing use Turbo Streams. The merchant sees live feedback without page reloads.
+
+---
+
+## Rails App Structure
+
+```
+app/
+  models/
+    merchant.rb
+    supplier.rb
+    variant.rb
+    supplier_profile.rb
+    mapping_dictionary.rb
+
+  services/
+    ingestion/
+      file_parser.rb             # Component 1 — parse CSV or Excel into raw row array
+    ai/
+      profile_interpreter.rb     # Component 2 — Gemini call, returns sku_column + qty_column
+      drift_detector.rb          # checks if cached profile headers still match incoming file
+    mapping/
+      dictionary_lookup.rb       # Component 3 — checks each code against mapping_dictionary
+      auto_matcher.rb            # attempts SKU match then barcode match before flagging unknown
+    compilation/
+      engine.rb                  # Component 5 — assembles final JSON output
+      validator.rb               # pre-output check that all variant references are still active
+
+  jobs/
+    process_supplier_file_job.rb  # orchestrates the full pipeline async via Sidekiq
+    catalog_import_job.rb         # handles bulk variant catalog CSV import
+
+  controllers/
+    uploads_controller.rb         # receives supplier file upload, enqueues Sidekiq job
+    mappings_controller.rb        # manual mapping UI actions (confirm, skip, pending)
+    variants_controller.rb        # merchant catalog management
+    merchants_controller.rb       # merchant management
+
+  views/
+    uploads/
+      new.html.erb                # file upload form
+      show.html.erb               # processing status + results via Turbo Stream
+    mappings/
+      index.html.erb              # manual mapping UI — list of unresolved codes
+      _mapping_row.html.erb       # single unresolved code row with variant search dropdown
+    variants/
+      index.html.erb              # merchant's master catalog view
+      import.html.erb             # bulk CSV import for variants
+
+  javascript/
+    controllers/
+      variant_search_controller.js   # Stimulus — live search dropdown for variant selection
+      bulk_select_controller.js      # Stimulus — select all / bulk confirm mappings
+      upload_controller.js           # Stimulus — file upload drag and drop UI
+```
+
+---
+
+## V1 — Build This Now (Core Engine Only)
+
+### What V1 Does
+
+1. Merchant uploads a supplier CSV or Excel file via the UI
+2. File is immediately enqueued to Sidekiq — web request returns instantly with a processing status page
+3. Turbo Stream broadcasts live processing status to the merchant's browser
+4. Sidekiq job runs the full pipeline:
+   - Ingestion Hub parses the file into raw rows
+   - Drift detection validates cached profile headers match incoming file
+   - AI Profile Interpreter calls Gemini if no valid cached profile exists
+   - Dictionary Lookup checks each supplier code against saved mappings
+   - Auto-matcher attempts SKU match then barcode match for unresolved codes
+   - Resolved codes proceed toward Compilation Engine
+   - Unresolved codes are saved as `pending` in mapping_dictionary
+5. Turbo Stream broadcasts completion to merchant's browser
+6. If unresolved codes exist, merchant is shown the Manual Mapping UI
+7. Merchant maps unknown codes to their variants, or skips them — saved permanently
+8. After confirmation, remaining resolved rows compile to final JSON output
+
+### Component 1 — Ingestion Hub
+`services/ingestion/file_parser.rb`
+
+- Accepts CSV — parsed with Ruby standard library CSV
+- Accepts Excel .xlsx — parsed with roo gem
+- Returns a uniform array of hashes regardless of input format:
+  ```ruby
+  [
+    { "ItemCode_Ref" => "XYZ-9982", "Avail_Qty" => "45", "Unit_Price" => "12.00" },
+    { "ItemCode_Ref" => "XYZ-9983", "Avail_Qty" => "30", "Unit_Price" => "12.00" }
+  ]
+  ```
+- No AI calls. No mapping logic. Just raw parsing into a consistent structure.
+- No other file types in V1.
+
+### Component 2 — AI Profile Interpreter
+`services/ai/profile_interpreter.rb` + `services/ai/drift_detector.rb`
+
+- Check supplier_profiles table first. If a valid profile exists for this merchant + supplier, use it — do not call Gemini.
+- Drift detection: before trusting cached profile, compare incoming file's headers against raw_headers stored in supplier_profiles. If headers differ, re-run Gemini and update the saved profile.
+- If no cached profile or drift detected: send first 10 rows to Gemini 2.5 Flash.
+- Gemini prompt: identify which column contains supplier product codes and which column contains available stock quantity. Return only the two column names.
+- Save result to supplier_profiles: sku_column_name, quantity_column_name, raw_headers.
+- Returns: `{ sku_column: "ItemCode_Ref", quantity_column: "Avail_Qty" }`
+- Cost control: never send full file to Gemini. Always send a snippet only.
+
+### Component 3 — Dictionary Lookup
+`services/mapping/dictionary_lookup.rb` + `services/mapping/auto_matcher.rb`
+
+- Uses the profile from Component 2 to extract supplier_code and quantity from each raw row
+- For each supplier code, resolution attempts in this exact order:
+  1. Exact match in mapping_dictionary for this merchant + supplier where status = `active` → resolve, update last_seen
+  2. Exact match against variants.master_sku for this merchant → auto-resolve, save to dictionary as `active`
+  3. Exact match against variants.barcode for this merchant → auto-resolve, save to dictionary as `active`
+  4. No match → save to mapping_dictionary as `pending`, flag for Manual Mapping UI
+- Updates last_seen on every mapping_dictionary row that is matched, regardless of how it was resolved
+- Returns two arrays: resolved rows and unresolved rows
+
+### Component 4 — Manual Mapping UI
+`views/mappings/` + `javascript/controllers/variant_search_controller.js`
+
+- Turbo Frame renders the unresolved codes list without full page reload
+- Each unresolved row shows: supplier code + any description or product name column from the file if present as a context clue
+- Stimulus controller powers live search across variants by product_title, variant_title, master_sku, barcode — searches local variants table only, no external API calls
+- Merchant actions per unresolved code:
+  - Select a variant → mapping saved as `active`, auto-resolved on every future upload
+  - Skip permanently → mapping saved as `skipped`, never surfaces again in any upload
+  - Skip for now → mapping stays as `pending`, reappears on next upload
+- Bulk confirm: merchant saves all decisions in one single form submission
+- Turbo Stream updates the page after confirmation without reload
+- After confirmation, newly resolved rows are enqueued to Sidekiq for final compilation
+
+### Component 5 — Compilation Engine
+`services/compilation/engine.rb` + `services/compilation/validator.rb`
+
+- Receives all resolved rows (auto-resolved + manually confirmed)
+- Pre-output validation: checks every variant reference in resolved rows — any pointing to a variant with status `deleted` are pulled out and given status `variant_deleted`
+- Assembles final JSON output
+- Needs_Review rows are included in output so merchant has a complete picture of the upload
+
+### V1 Output Schema
+
+```json
+[
+  {
+    "supplier_code": "XYZ-9982",
+    "master_sku": "AERO-BLK-09",
+    "platform_variant_id": null,
+    "platform_inventory_id": null,
+    "quantity": 45,
+    "status": "Ready_To_Sync"
+  },
+  {
+    "supplier_code": "FOA-GG-S9",
+    "master_sku": "FOAM-GRY-09",
+    "platform_variant_id": null,
+    "platform_inventory_id": null,
+    "quantity": 12,
+    "status": "Ready_To_Sync"
+  },
+  {
+    "supplier_code": "UNKNOWN-774",
+    "master_sku": null,
+    "platform_variant_id": null,
+    "platform_inventory_id": null,
+    "quantity": 15,
+    "status": "Needs_Review"
+  }
+]
+```
+
+`platform_variant_id` and `platform_inventory_id` are null in V1. `Ready_To_Sync` means the core engine has fully resolved this row — actual writing to any platform happens in a future phase.
+
+### V1 Sidekiq Job Flow
+
+```
+UploadsController#create
+  → enqueue ProcessSupplierFileJob
+  → redirect to upload status page immediately
+
+ProcessSupplierFileJob performs:
+  1. Ingestion::FileParser.call(file)
+  2. Ai::DriftDetector.call(supplier, incoming_headers)
+  3. Ai::ProfileInterpreter.call(supplier, rows) — only if no valid cached profile
+  4. Mapping::DictionaryLookup.call(merchant, supplier, rows, profile)
+  5. Mapping::AutoMatcher.call(merchant, unresolved_rows)
+  6. Save pending rows to mapping_dictionary
+  7. Turbo Stream broadcast → render results + mapping UI if unresolved codes exist
+
+After merchant confirms mappings:
+  → enqueue CompilationJob for newly confirmed rows
+  → Compilation::Validator.call(resolved_rows)
+  → Compilation::Engine.call(validated_rows)
+  → Turbo Stream broadcast → render final JSON output
+```
+
+### V1 Out of Scope — Do Not Build
+- PDF ingestion
+- Any platform API calls (Shopify, WooCommerce, or anything else)
+- OAuth or platform authentication of any kind
+- Webhook handling
+- Automatic catalog sync from any external platform
+- Writing inventory quantities to any platform
+- Custom output formats per merchant
+- Supplier portal
+- Email or text input of any kind
+
+---
+
+## Database Schema
+
+All platform-related fields exist from day one but are nullable. Use generic naming — never Shopify-specific column names anywhere in the schema.
+
+### merchants
+```ruby
+create_table :merchants, id: :uuid do |t|
+  t.string   :name,              null: false
+  t.string   :platform                          # 'shopify', 'woocommerce', 'amazon', null
+  t.string   :platform_domain                   # store URL or seller ID, null until connected
+  t.string   :access_token                      # encrypted, null until platform connected
+  t.datetime :catalog_synced_at                 # null until platform connected
+  t.timestamps
+end
+```
+
+### suppliers
+```ruby
+create_table :suppliers, id: :uuid do |t|
+  t.references :merchant, type: :uuid, null: false, foreign_key: true
+  t.string     :name,     null: false
+  t.timestamps
+end
+```
+
+### variants
+Local mirror of the merchant's master product catalog. In V1 populated via manual CSV import or manual UI entry. Platform fields are nullable and populated only when platform integration is built.
+
+```ruby
+create_table :variants, id: :uuid do |t|
+  t.references :merchant,             type: :uuid, null: false, foreign_key: true
+  t.string     :product_title,        null: false    # "Air Runner Sneaker"
+  t.string     :variant_title,        null: false    # "Black / Size 9"
+  t.string     :master_sku,           null: false    # "AERO-BLK-09"
+  t.string     :barcode                             # EAN or UPC, nullable
+  t.string     :platform                            # 'shopify', 'woocommerce', null
+  t.string     :platform_variant_id                 # platform's own variant ID, null
+  t.string     :platform_inventory_id               # platform's inventory item ID, null
+  t.string     :status,               null: false, default: 'active'   # 'active', 'deleted'
+  t.datetime   :synced_at                           # null until platform connected
+  t.timestamps
+
+  t.index [:merchant_id, :master_sku], unique: true
+  t.index [:merchant_id, :barcode]
+  t.index [:merchant_id, :platform_variant_id]
+  t.index [:merchant_id, :status]
+end
+```
+
+### supplier_profiles
+Gemini interpreter cache. Once a profile exists for a supplier, Gemini never runs again unless drift is detected.
+
+```ruby
+create_table :supplier_profiles, id: :uuid do |t|
+  t.references :merchant, type: :uuid, null: false, foreign_key: true
+  t.references :supplier, type: :uuid, null: false, foreign_key: true
+  t.string     :sku_column_name,      null: false    # "ItemCode_Ref"
+  t.string     :quantity_column_name, null: false    # "Avail_Qty"
+  t.jsonb      :raw_headers,          null: false    # full header array for drift detection
+  t.datetime   :last_used_at
+  t.timestamps
+
+  t.index [:merchant_id, :supplier_id], unique: true
+end
+```
+
+### mapping_dictionary
+The core translation table. Every supplier code ever seen by the engine lives here once encountered.
+
+```ruby
+create_table :mapping_dictionaries, id: :uuid do |t|
+  t.references :merchant, type: :uuid, null: false, foreign_key: true
+  t.references :supplier, type: :uuid, null: false, foreign_key: true
+  t.string     :supplier_code,        null: false    # "XYZ-9982"
+  t.string     :master_sku                           # "AERO-BLK-09", display + auto-match reference
+  t.string     :platform_variant_id                  # null until platform connected
+  t.string     :status,               null: false, default: 'pending'   # 'active', 'skipped', 'pending'
+  t.datetime   :last_seen                            # updated on every upload where this code appears
+  t.timestamps
+
+  t.index [:merchant_id, :supplier_id, :supplier_code], unique: true
+  t.index [:merchant_id, :status]
+  t.index :last_seen
+end
+```
+
+---
+
+## Status Field Reference
+
+### mapping_dictionary.status
+```
+active   — mapped and confirmed by merchant, auto-resolve on every future upload
+skipped  — merchant said they don't carry this, never surface again in any upload
+pending  — seen but not yet mapped, reappear on next upload
+```
+
+### variants.status
+```
+active   — variant exists and is live in the merchant's catalog
+deleted  — variant was removed, exclude from all output and sync
+```
+
+### output JSON status values
+```
+Ready_To_Sync    — fully resolved, has master_sku, ready for platform sync when that phase is built
+Needs_Review     — supplier code could not be resolved, merchant attention required
+variant_deleted  — was previously mapped but the target variant has since been deleted
+```
+
+---
+
+## last_seen Behaviour
+
+Every time a supplier code appears in an uploaded file, the mapping_dictionary row for that code has its last_seen updated to the current timestamp — regardless of whether the code resolved successfully or not.
+
+Codes where last_seen is older than 180 days (6 months) surface in a merchant dashboard alert:
+"These supplier codes haven't appeared in any recent upload — still relevant?"
+
+Merchant can bulk-delete or bulk-skip stale mappings in one action. This prevents ghost mappings from accumulating over time.
+
+---
+
+## Catalog Management in V1
+
+In V1, the variants table is populated in two ways only. No platform API calls of any kind.
+
+### Bulk CSV import
+Merchant uploads a CSV following this exact template:
+```
+master_sku,product_title,variant_title,barcode
+AERO-BLK-09,Air Runner,Black / Size 9,1234567890123
+AERO-BLK-10,Air Runner,Black / Size 10,1234567890124
+FOAM-GRY-09,FoamStep,Grey / Size 9,1234567890125
+SOCK-WHT-OS,Running Socks,Default,
+```
+Processed via CatalogImportJob in Sidekiq. Turbo Stream broadcasts progress and completion.
+
+### Manual entry via UI
+Merchant adds individual variants through a form in the variants section of the app.
+
+---
+
+## Catalog Sync Strategy — Future Platform Integration Phase
+
+When Shopify or any other platform integration is added:
+
+1. **Full pull on install** — immediately after OAuth, pull entire product and variant catalog from the platform API, populate variants table, fill all platform fields
+2. **Webhooks** — subscribe to product create, update, delete events to keep variants table in sync in real time
+3. **Daily full re-sync** — once per day re-pull full catalog and reconcile, catch anything webhooks missed, update catalog_synced_at on the merchant record
+4. **Pre-sync validation** — before writing inventory to the platform, validate every platform_variant_id still exists and is active
+
+---
+
+## V2 — Build After V1 Is Stable and Tested
+
+- PDF invoice ingestion
+- AI-assisted mapping suggestions — if supplier file has a description or product name column alongside the supplier code, use it to suggest likely variant matches to the merchant during manual mapping
+- Shopify platform integration:
+  - OAuth install and callback flow
+  - Full catalog pull on install populating variants table
+  - Webhooks for real-time catalog sync (products/create, products/update, products/delete)
+  - Inventory write via Shopify Inventory API using platform_inventory_id
+  - Per-row sync logging (success, failed, skipped)
+  - Rate limit handling for Shopify API calls
+- Multi-location inventory support
+- Mapping health dashboard — visual overview of dictionary health, stale mappings, unresolved code rate, sync history per supplier
+- Supplier-level analytics — upload frequency, resolution rate, unknown code rate per supplier
+
+---
+
+## Future Scope — Extensibility
+
+The core engine never changes. Only new Sync Writer components are added per platform.
+
+- **WooCommerce integration** — new Sync Writer only, core engine untouched
+- **Amazon Seller Central** — new Sync Writer only, core engine untouched
+- **Magento** — new Sync Writer only, core engine untouched
+- **Custom ERP via webhook or API** — new Sync Writer only, core engine untouched
+- **Supplier portal** — suppliers upload files directly without going through the merchant
+- **Custom output format per merchant** — merchant defines the exact column structure they want in the final output
+- **Quantity calculation rules** — handle cases where supplier reports in_warehouse and in_transit separately and merchant wants them summed, or carton counts with a units-per-carton multiplier
+- **Scheduled auto-processing** — merchant configures a supplier SFTP or email attachment source and uploads happen automatically on a schedule
+- **Public developer API** — expose the core engine as a REST API so developers can integrate NormaList normalization into their own systems
+- **Multi-currency price normalization** — if supplier files include pricing columns
+
+---
+
+## Rules That Never Change Regardless of Phase
+
+- The core engine (Components 1 through 5) never contains platform-specific code
+- Every ActiveRecord query touching merchant data must be scoped by merchant_id — no exceptions
+- The mapping_dictionary is the single source of truth for all supplier-to-master mappings
+- Gemini only ever receives a snippet of the file (first 10 rows), never the full payload
+- platform_variant_id and platform_inventory_id in the output are always null until platform integration is explicitly built and connected
+- All file processing runs in Sidekiq — never synchronously in a controller action
+- All UI feedback during async processing uses Turbo Streams
+- No React, No Vue — all interactivity via Hotwire (Turbo + Stimulus)
+- multi-tenancy is non-negotiable — every query, every service call, every job must carry and respect merchant_id
