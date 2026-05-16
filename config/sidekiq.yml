@@ -1,0 +1,17 @@
+:concurrency: 5
+:queues:
+  - default
+  - uploads
+  - catalog
+
+:redis:
+  url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6379/0") %>
+
+development:
+  :concurrency: 3
+
+production:
+  :concurrency: 10
+
+test:
+  :concurrency: 1
