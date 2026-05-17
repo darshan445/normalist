@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_16_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_16_150001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -53,6 +53,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_16_140000) do
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["merchant_id"], name: "index_catalog_imports_on_merchant_id"
+  end
+
+  create_table "feeds", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.jsonb "config", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.string "feed_type", null: false
+    t.datetime "last_synced_at"
+    t.uuid "merchant_id", null: false
+    t.string "name", null: false
+    t.string "schedule"
+    t.string "status", default: "active", null: false
+    t.uuid "supplier_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["feed_type"], name: "index_feeds_on_feed_type"
+    t.index ["merchant_id", "status"], name: "index_feeds_on_merchant_id_and_status"
+    t.index ["merchant_id", "supplier_id"], name: "index_feeds_on_merchant_id_and_supplier_id"
   end
 
   create_table "mapping_dictionaries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -100,6 +116,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_16_140000) do
   create_table "supplier_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.uuid "feed_id"
     t.uuid "merchant_id", null: false
     t.jsonb "output", default: []
     t.integer "resolved_count", default: 0, null: false
@@ -108,6 +125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_16_140000) do
     t.uuid "supplier_id", null: false
     t.integer "unresolved_count", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["feed_id"], name: "index_supplier_uploads_on_feed_id"
     t.index ["merchant_id", "status"], name: "index_supplier_uploads_on_merchant_id_and_status"
     t.index ["merchant_id"], name: "index_supplier_uploads_on_merchant_id"
     t.index ["supplier_id"], name: "index_supplier_uploads_on_supplier_id"
@@ -144,10 +162,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_16_140000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "catalog_imports", "merchants"
+  add_foreign_key "feeds", "merchants"
+  add_foreign_key "feeds", "suppliers"
   add_foreign_key "mapping_dictionaries", "merchants"
   add_foreign_key "mapping_dictionaries", "suppliers"
   add_foreign_key "supplier_profiles", "merchants"
   add_foreign_key "supplier_profiles", "suppliers"
+  add_foreign_key "supplier_uploads", "feeds"
   add_foreign_key "supplier_uploads", "merchants"
   add_foreign_key "supplier_uploads", "suppliers"
   add_foreign_key "suppliers", "merchants"

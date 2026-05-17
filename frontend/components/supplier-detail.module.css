@@ -1,0 +1,124 @@
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9375rem;
+  font-weight: 550;
+  color: var(--p-color-text);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--p-color-text-link);
+  text-decoration: none;
+}
+
+.sectionDivider {
+  border: none;
+  border-top: 1px solid var(--p-color-border-secondary);
+  margin: 0;
+}
+
+.sectionAnchor {
+  scroll-margin-top: 1rem;
+}
+
+.feedCard {
+  border: 1px solid var(--p-color-border-secondary);
+  border-radius: var(--p-border-radius-200);
+  overflow: hidden;
+}
+
+.feedRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+}
+
+.feedRow:last-child {
+  border-bottom: none;
+}
+
+.feedRowMuted {
+  background: var(--p-color-bg-surface-secondary);
+}
+
+.feedMain {
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.feedIcon {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.feedMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.feedActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.profileRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+}
+
+.profileRow:last-child {
+  border-bottom: none;
+}
+
+.profileFooter {
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid var(--p-color-border-secondary);
+}
+
+.activeMappingRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+}
+
+.activeMappingRow:last-child {
+  border-bottom: none;
+}
+
+.skipActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .feedRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feedActions {
+    align-items: flex-start;
+  }
+
+  .activeMappingRow {
+    grid-template-columns: 1fr;
+  }
+}
