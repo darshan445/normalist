@@ -1,0 +1,37 @@
+.mappingRow {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(12rem, 1.4fr);
+  gap: 1.25rem;
+  align-items: start;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+}
+
+.mappingRow:last-child {
+  border-bottom: none;
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footerAction {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .mappingRow {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

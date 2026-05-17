@@ -1,0 +1,42 @@
+.supplierList {
+  display: flex;
+  flex-direction: column;
+}
+
+.supplierRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.supplierRow:last-child {
+  border-bottom: none;
+}
+
+.supplierRow:hover {
+  background: var(--p-color-bg-surface-hover);
+  text-decoration: none;
+}
+
+.supplierRowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.supplierStatus {
+  flex-shrink: 0;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.sectionAnchor {
+  scroll-margin-top: 1rem;
+}

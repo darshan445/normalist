@@ -2,6 +2,7 @@ class SupplierUpload < ApplicationRecord
   include MerchantScoped
 
   belongs_to :supplier
+  belongs_to :feed, optional: true
   has_one_attached :file
 
   STATUSES = %w[pending processing completed failed awaiting_mapping].freeze
