@@ -21,7 +21,7 @@ module Mapping
         mapping = find_or_build_mapping(row[:supplier_code])
         mapping.touch_last_seen!
 
-        if mapping.status == "active" && mapping.master_sku.present?
+        if mapping.status == "mapped" && mapping.master_sku.present?
           variant = @merchant.variants.active.find_by(master_sku: mapping.master_sku)
           resolved << ResolvedRow.new(
             supplier_code: row[:supplier_code],
@@ -32,7 +32,7 @@ module Mapping
           )
         elsif mapping.status == "skipped"
           next
-        else
+        elsif mapping.status.in?(%w[pending review])
           unresolved << UnresolvedRow.new(
             supplier_code: row[:supplier_code],
             quantity: row[:quantity],

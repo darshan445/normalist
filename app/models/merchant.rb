@@ -6,7 +6,6 @@ class Merchant < ApplicationRecord
   has_many :supplier_profiles, dependent: :destroy
   has_many :mapping_dictionaries, dependent: :destroy
   has_many :supplier_uploads, dependent: :destroy
-  has_many :catalog_imports, dependent: :destroy
 
   validates :name, presence: true
   validates :platform_domain,

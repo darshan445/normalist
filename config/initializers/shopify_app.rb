@@ -29,7 +29,10 @@ ShopifyApp.configure do |config|
     { topic: "app/uninstalled", address: "webhooks/app_uninstalled" },
     { topic: "customers/data_request", address: "webhooks/customers_data_request" },
     { topic: "customers/redact", address: "webhooks/customers_redact" },
-    { topic: "shop/redact", address: "webhooks/shop_redact" }
+    { topic: "shop/redact", address: "webhooks/shop_redact" },
+    { topic: "products/create", address: "/webhooks/products/create" },
+    { topic: "products/update", address: "/webhooks/products/update" },
+    { topic: "products/delete", address: "/webhooks/products/delete" }
   ]
 
   config.api_key = ENV.fetch("SHOPIFY_CLIENT_ID")
@@ -51,6 +54,9 @@ Rails.application.config.after_initialize do
     user_agent_prefix: "ShopifyApp/#{ShopifyApp::VERSION}"
   )
 
+end
+
+Rails.application.config.to_prepare do
   register_shopify_webhook_handlers!
 end
 
@@ -59,7 +65,10 @@ def register_shopify_webhook_handlers!
     "app/uninstalled" => [ "webhooks/app_uninstalled", Shopify::AppUninstalledHandler.new ],
     "customers/data_request" => [ "webhooks/customers_data_request", Shopify::CustomersDataRequestHandler.new ],
     "customers/redact" => [ "webhooks/customers_redact", Shopify::CustomersRedactHandler.new ],
-    "shop/redact" => [ "webhooks/shop_redact", Shopify::ShopRedactHandler.new ]
+    "shop/redact" => [ "webhooks/shop_redact", Shopify::ShopRedactHandler.new ],
+    "products/create" => [ "/webhooks/products/create", WebhooksController::ProductsCreateHandler.new ],
+    "products/update" => [ "/webhooks/products/update", WebhooksController::ProductsUpdateHandler.new ],
+    "products/delete" => [ "/webhooks/products/delete", WebhooksController::ProductsDeleteHandler.new ]
   }
 
   handlers.each do |topic, (path, handler)|

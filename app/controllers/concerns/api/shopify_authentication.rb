@@ -13,7 +13,15 @@ module Api
     private
 
     def authenticate_shopify_merchant!
-      shop_domain = shop_from_session_token || shop_from_development_param
+      id_token = bearer_token
+      shop_domain = shop_from_session_token(id_token)
+
+      if id_token.present? && !merchant_connected?(shop_domain)
+        ensure_shopify_install!(id_token)
+        shop_domain = shop_from_session_token(id_token)
+      end
+
+      shop_domain ||= shop_from_development_param
 
       unless shop_domain
         render(json: { error: "unauthorized", message: "Missing or invalid Shopify session" }, status: :unauthorized)
@@ -34,8 +42,22 @@ module Api
       end
     end
 
-    def shop_from_session_token
-      token = bearer_token
+    def ensure_shopify_install!(id_token)
+      ShopifyApp::Auth::TokenExchange.perform(id_token)
+    rescue ShopifyAPI::Errors::InvalidJwtTokenError, ShopifyAPI::Errors::MissingJwtTokenError => e
+      Rails.logger.warn("[Api::ShopifyAuthentication] Invalid session token: #{e.message}")
+    rescue StandardError => e
+      Rails.logger.error("[Api::ShopifyAuthentication] Token exchange failed: #{e.message}")
+      nil
+    end
+
+    def merchant_connected?(shop_domain)
+      return false if shop_domain.blank?
+
+      Merchant.find_by(platform_domain: shop_domain)&.shopify_connected?
+    end
+
+    def shop_from_session_token(token = bearer_token)
       return if token.blank?
 
       payload = ShopifyAPI::Auth::JwtPayload.new(token)

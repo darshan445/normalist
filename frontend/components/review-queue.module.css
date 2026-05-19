@@ -1,0 +1,70 @@
+.item {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.suggestion {
+  padding: 0.75rem 1rem;
+  background: var(--p-color-bg-surface-secondary);
+  border-radius: var(--p-border-radius-200);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.manualSection {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--p-color-border-secondary);
+}
+
+.searchResults {
+  margin-top: 0.5rem;
+  border: 1px solid var(--p-color-border-secondary);
+  border-radius: var(--p-border-radius-200);
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.searchResultButton {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.searchResultButton:last-child {
+  border-bottom: none;
+}
+
+.searchResultButton:hover {
+  background: var(--p-color-bg-surface-hover);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+}

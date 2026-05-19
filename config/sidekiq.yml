@@ -3,6 +3,14 @@
   - default
   - uploads
   - catalog
+  - shopify_sync
+
+:schedule:
+  daily_catalog_sync:
+    cron: "0 2 * * *"
+    class: DailyCatalogSyncJob
+    queue: default
+    description: "Re-sync all merchant catalogs from Shopify"
 
 :redis:
   url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6379/0") %>

@@ -25,7 +25,10 @@ export default function RequireShopifyAuth({ shop, host, embedded, children }) {
       }
 
       try {
-        const sessionToken = embedded ? await fetchSessionToken() : null;
+        const sessionToken = await fetchSessionToken();
+        if (sessionToken) {
+          sessionStorage.removeItem(REDIRECT_KEY);
+        }
         const result = await verifyShopifySession({ shop, sessionToken });
 
         if (cancelled) return;

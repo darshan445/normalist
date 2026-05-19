@@ -21,13 +21,37 @@ FactoryBot.define do
     supplier
     sequence(:supplier_code) { |n| "SUP-#{n}" }
     status { "pending" }
+
+    trait :review do
+      status { "review" }
+    end
   end
 
   factory :supplier_profile do
     merchant
     supplier
-    sku_column_name { "ItemCode_Ref" }
-    quantity_column_name { "Avail_Qty" }
+    unique_column { "ItemCode_Ref" }
+    quantity_column { "Avail_Qty" }
     raw_headers { %w[ItemCode_Ref Avail_Qty Unit_Price] }
+    file_schema_map { {} }
+  end
+
+  factory :feed do
+    merchant
+    supplier
+    sequence(:name) { |n| "Feed #{n}" }
+    feed_type { "file_upload" }
+    status { "active" }
+    config { {} }
+  end
+
+  factory :supplier_upload do
+    merchant
+    supplier
+    status { "completed" }
+    resolved_count { 10 }
+    unresolved_count { 0 }
+
+    to_create { |instance| instance.save(validate: false) }
   end
 end

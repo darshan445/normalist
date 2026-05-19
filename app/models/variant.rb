@@ -1,5 +1,8 @@
 class Variant < ApplicationRecord
   include MerchantScoped
+  include Neighbor::Model
+
+  has_neighbors :embedding
 
   STATUSES = %w[active deleted].freeze
 
@@ -8,6 +11,13 @@ class Variant < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
 
   scope :active, -> { where(status: "active") }
+  scope :needs_sku, -> { where(needs_sku: true) }
+  scope :has_sku, -> { where(needs_sku: false) }
+  
+  def embedding_text
+    [product_title, variant_title, master_sku, barcode].filter_map { |value| value.presence }.join(" | ")
+  end
+
   scope :search, ->(query) {
     return all if query.blank?
 

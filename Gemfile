@@ -9,11 +9,14 @@ gem "rack-cors"
 
 # Background processing
 gem "sidekiq"
+gem "sidekiq-cron"
 gem "redis"
 
 # File parsing & AI
 gem "roo"
 gem "faraday"
+gem "neighbor"
+gem "pgvector"
 
 # Shopify OAuth and webhooks
 gem "shopify_app"

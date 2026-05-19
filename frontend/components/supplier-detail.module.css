@@ -41,6 +41,17 @@
   border-bottom: none;
 }
 
+.feedRowLink {
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.feedRowLink:hover {
+  background: var(--p-color-bg-surface-hover);
+  text-decoration: none;
+}
+
 .feedRowMuted {
   background: var(--p-color-bg-surface-secondary);
 }
