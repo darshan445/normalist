@@ -30,9 +30,9 @@ ShopifyApp.configure do |config|
     { topic: "customers/data_request", address: "webhooks/customers_data_request" },
     { topic: "customers/redact", address: "webhooks/customers_redact" },
     { topic: "shop/redact", address: "webhooks/shop_redact" },
-    { topic: "products/create", address: "/webhooks/products/create" },
-    { topic: "products/update", address: "/webhooks/products/update" },
-    { topic: "products/delete", address: "/webhooks/products/delete" }
+    { topic: "products/create", address: "webhooks/products/create" },
+    { topic: "products/update", address: "webhooks/products/update" },
+    { topic: "products/delete", address: "webhooks/products/delete" }
   ]
 
   config.api_key = ENV.fetch("SHOPIFY_CLIENT_ID")
@@ -66,9 +66,9 @@ def register_shopify_webhook_handlers!
     "customers/data_request" => [ "webhooks/customers_data_request", Shopify::CustomersDataRequestHandler.new ],
     "customers/redact" => [ "webhooks/customers_redact", Shopify::CustomersRedactHandler.new ],
     "shop/redact" => [ "webhooks/shop_redact", Shopify::ShopRedactHandler.new ],
-    "products/create" => [ "/webhooks/products/create", WebhooksController::ProductsCreateHandler.new ],
-    "products/update" => [ "/webhooks/products/update", WebhooksController::ProductsUpdateHandler.new ],
-    "products/delete" => [ "/webhooks/products/delete", WebhooksController::ProductsDeleteHandler.new ]
+    "products/create" => [ "webhooks/products/create", WebhooksController::ProductsCreateHandler.new ],
+    "products/update" => [ "webhooks/products/update", WebhooksController::ProductsUpdateHandler.new ],
+    "products/delete" => [ "webhooks/products/delete", WebhooksController::ProductsDeleteHandler.new ]
   }
 
   handlers.each do |topic, (path, handler)|
