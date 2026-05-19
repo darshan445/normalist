@@ -29,5 +29,9 @@ module Normalist
     config.eager_load_paths << Rails.root.join("app/handlers")
 
     config.active_job.queue_adapter = :sidekiq
+
+    config.generators do |g|
+      g.orm :active_record, primary_key_type: :uuid
+    end
   end
 end

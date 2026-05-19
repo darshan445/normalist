@@ -6,9 +6,10 @@ module Shopify
     queue_as :default
 
     def perform(shop_domain:)
-      merchant = Merchant.find_by!(platform_domain: shop_domain)
+      merchant = Merchant.find_by(platform_domain: shop_domain)
+      return unless merchant
 
-      CatalogSyncJob.perform_later(merchant_id: merchant.id)
+      CatalogSyncJob.perform_later(merchant.id)
     end
   end
 end

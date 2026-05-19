@@ -3,17 +3,22 @@ class SupplierUpload < ApplicationRecord
 
   belongs_to :supplier
   belongs_to :feed, optional: true
+  has_many :mapping_dictionaries, dependent: :nullify
   has_one_attached :file
 
-  STATUSES = %w[pending processing completed failed awaiting_mapping].freeze
+  STATUSES = %w[pending processing needs_review completed failed].freeze
 
   validates :status, inclusion: { in: STATUSES }
-  validate :file_must_be_attached, on: :create
 
-  after_create_commit :enqueue_processing
+  def attach_and_enqueue!(uploaded_file)
+    transaction do
+      save!
+      file.attach(uploaded_file)
+      raise ActiveRecord::RecordInvalid, self unless file.attached?
 
-  def file_must_be_attached
-    errors.add(:file, "can't be blank") unless file.attached?
+      SupplierSchemaDiscoveryJob.perform_later(id)
+    end
+    self
   end
 
   def processing?
@@ -22,11 +27,5 @@ class SupplierUpload < ApplicationRecord
 
   def broadcast_target
     "supplier_upload_#{id}"
-  end
-
-  private
-
-  def enqueue_processing
-    ProcessSupplierFileJob.perform_later(id) if file.attached?
   end
 end

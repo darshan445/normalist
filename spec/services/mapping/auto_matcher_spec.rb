@@ -24,6 +24,6 @@ RSpec.describe Mapping::AutoMatcher do
     result = described_class.call(merchant: merchant, supplier: supplier, unresolved_rows: unresolved)
 
     expect(result[:resolved].size).to eq(1)
-    expect(mapping.reload).to have_attributes(status: "active", master_sku: "AERO-BLK-09")
+    expect(mapping.reload).to have_attributes(status: "mapped", master_sku: "AERO-BLK-09")
   end
 end

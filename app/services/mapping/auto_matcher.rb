@@ -19,7 +19,7 @@ module Mapping
         if variant
           mapping = row.mapping_dictionary
           mapping.update!(
-            status: "active",
+            status: "mapped",
             master_sku: variant.master_sku,
             last_seen: Time.current
           )
