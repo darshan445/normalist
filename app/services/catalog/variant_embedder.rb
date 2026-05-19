@@ -4,15 +4,22 @@ module Catalog
   class VariantEmbedder
     BATCH_SIZE = 100
 
-    def self.call(merchant:)
-      new(merchant: merchant).call
+    def self.call(merchant:, variants: nil)
+      new(merchant: merchant, variants: variants).call
     end
 
-    def initialize(merchant:)
+    def initialize(merchant:, variants: nil)
       @merchant = merchant
+      @variants = variants
     end
 
     def call
+      if @variants
+        list = Array(@variants)
+        list.each_slice(BATCH_SIZE) { |batch| embed_variants!(batch) }
+        return list.size
+      end
+
       scope = @merchant.variants.active
       total = 0
 
