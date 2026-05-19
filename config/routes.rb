@@ -8,6 +8,10 @@ Rails.application.routes.draw do
   post "/webhooks/products/create", to: "webhooks#product_create"
   post "/webhooks/products/update", to: "webhooks#product_update"
   post "/webhooks/products/delete", to: "webhooks#product_delete"
+  post "/webhooks/inventory_items/create", to: "webhooks#inventory_item_create"
+  post "/webhooks/inventory_items/update", to: "webhooks#inventory_item_update"
+  post "/webhooks/inventory_levels/connect", to: "webhooks#inventory_level_connect"
+  post "/webhooks/inventory_levels/update", to: "webhooks#inventory_level_update"
 
   namespace :api do
     namespace :v1 do

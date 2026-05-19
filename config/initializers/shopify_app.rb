@@ -32,7 +32,11 @@ ShopifyApp.configure do |config|
     { topic: "shop/redact", address: "webhooks/shop_redact" },
     { topic: "products/create", address: "webhooks/products/create" },
     { topic: "products/update", address: "webhooks/products/update" },
-    { topic: "products/delete", address: "webhooks/products/delete" }
+    { topic: "products/delete", address: "webhooks/products/delete" },
+    { topic: "inventory_items/create", address: "webhooks/inventory_items/create" },
+    { topic: "inventory_items/update", address: "webhooks/inventory_items/update" },
+    { topic: "inventory_levels/connect", address: "webhooks/inventory_levels/connect" },
+    { topic: "inventory_levels/update", address: "webhooks/inventory_levels/update" }
   ]
 
   config.api_key = ENV.fetch("SHOPIFY_CLIENT_ID")
@@ -68,7 +72,23 @@ def register_shopify_webhook_handlers!
     "shop/redact" => [ "webhooks/shop_redact", Shopify::ShopRedactHandler.new ],
     "products/create" => [ "webhooks/products/create", WebhooksController::ProductsCreateHandler.new ],
     "products/update" => [ "webhooks/products/update", WebhooksController::ProductsUpdateHandler.new ],
-    "products/delete" => [ "webhooks/products/delete", WebhooksController::ProductsDeleteHandler.new ]
+    "products/delete" => [ "webhooks/products/delete", WebhooksController::ProductsDeleteHandler.new ],
+    "inventory_items/create" => [
+      "webhooks/inventory_items/create",
+      WebhooksController::InventoryItemsCreateHandler.new
+    ],
+    "inventory_items/update" => [
+      "webhooks/inventory_items/update",
+      WebhooksController::InventoryItemsUpdateHandler.new
+    ],
+    "inventory_levels/connect" => [
+      "webhooks/inventory_levels/connect",
+      WebhooksController::InventoryLevelsConnectHandler.new
+    ],
+    "inventory_levels/update" => [
+      "webhooks/inventory_levels/update",
+      WebhooksController::InventoryLevelsUpdateHandler.new
+    ]
   }
 
   handlers.each do |topic, (path, handler)|
