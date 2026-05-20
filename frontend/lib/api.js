@@ -282,9 +282,8 @@ export async function updateFeed(supplierId, feedId, feed, { shop, sessionToken 
 
 export function shopifyLoginUrl({ shop, host }) {
   const base =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    process.env.NEXT_PUBLIC_API_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
 
   const url = new URL("/login", base);
   if (shop) url.searchParams.set("shop", shop);
