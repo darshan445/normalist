@@ -54,18 +54,12 @@ RSpec.describe Mapping::Review::Confirm do
 
       expect(result.status).to eq("mapped")
       expect(result.master_sku).to eq("MASTER-1")
+      expect(mapping.reload.pending_quantity).to eq(15)
       expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
         merchant.id,
         upload.id,
-        mapping.id,
-        10
-      )
-      expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
-        merchant.id,
-        upload.id,
-        mapping.id,
-        5
-      )
+        mapping.id
+      ).once
 
       upload.reload
       expect(upload.resolved_count).to eq(10)
@@ -73,6 +67,19 @@ RSpec.describe Mapping::Review::Confirm do
       expect(upload.output).to eq([])
       expect(upload.status).to eq("completed")
       expect(upload.stage).to eq("complete")
+    end
+
+    it "uses pending_quantity when set instead of per-row upload quantities" do
+      mapping.update!(pending_quantity: 15)
+
+      described_class.call(merchant: merchant, mapping_id: mapping.id)
+
+      expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
+        merchant.id,
+        upload.id,
+        mapping.id
+      ).once
+      expect(mapping.reload.pending_quantity).to eq(15)
     end
   end
 

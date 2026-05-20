@@ -52,16 +52,33 @@ RSpec.describe Mapping::Review::ManualMatch do
       expect(result.status).to eq("mapped")
       expect(result.master_sku).to eq("PICK-1")
       expect(result.platform_variant_id).to eq("pv-pick")
+      expect(result.pending_quantity).to eq(7)
       expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
         merchant.id,
         upload.id,
-        mapping.id,
-        7
+        mapping.id
       )
 
       upload.reload
       expect(upload.unresolved_count).to eq(0)
       expect(upload.status).to eq("completed")
+    end
+
+    it "uses pending_quantity when set" do
+      mapping.update!(pending_quantity: 12)
+
+      described_class.call(
+        merchant: merchant,
+        mapping_id: mapping.id,
+        variant_id: chosen_variant.id
+      )
+
+      expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
+        merchant.id,
+        upload.id,
+        mapping.id
+      ).once
+      expect(mapping.reload.pending_quantity).to eq(12)
     end
   end
 

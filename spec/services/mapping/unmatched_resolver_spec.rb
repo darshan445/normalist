@@ -47,7 +47,12 @@ RSpec.describe Mapping::UnmatchedResolver do
     mapping = MappingDictionary.find_by!(merchant: merchant, supplier: supplier, supplier_code: "TSH-BLU-L")
     expect(mapping.status).to eq("mapped")
     expect(mapping.master_sku).to eq("TEE-BLU-L")
-    expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).twice
+    expect(mapping.pending_quantity).to eq(15)
+    expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
+      merchant.id,
+      upload.id,
+      mapping.id
+    ).once
   end
 
   it "sends middle-band codes to AI confirmation" do
@@ -96,6 +101,7 @@ RSpec.describe Mapping::UnmatchedResolver do
     expect(mapping.supplier_upload_id).to eq(upload.id)
     expect(mapping.platform_variant_id).to eq(variant.platform_variant_id)
     expect(mapping.confidence_score).to eq(0.55)
+    expect(mapping.pending_quantity).to eq(1)
     expect(result.output).to eq([ { "unique_code" => "UNKNOWN", "quantity" => 1 } ])
   end
 end

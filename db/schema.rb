@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_130100) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -66,6 +66,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_130100) do
     t.datetime "last_seen"
     t.string "master_sku"
     t.uuid "merchant_id", null: false
+    t.integer "pending_quantity"
     t.string "platform_inventory_id"
     t.string "platform_variant_id"
     t.string "quantity_behavior", default: "add", null: false

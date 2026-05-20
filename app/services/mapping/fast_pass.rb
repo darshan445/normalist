@@ -90,15 +90,12 @@ module Mapping
     end
 
     def resolve_from_dictionary!(row, mapping)
+      Review::PendingQuantity.merge_on_mapping!(mapping, row[:quantity])
+      mapping.update!(supplier_upload_id: @upload.id) if mapping.supplier_upload_id.blank?
       mapping.touch_last_seen!
       @resolved_count += 1
 
-      Shopify::InventoryUpdateJob.perform_later(
-        @merchant.id,
-        @upload.id,
-        mapping.id,
-        row[:quantity]
-      )
+      ShopifyInventoryEnqueue.call(mapping: mapping)
     end
 
     def find_variant(value)
@@ -119,6 +116,7 @@ module Mapping
         platform_variant_id: variant.platform_variant_id,
         platform_inventory_id: variant.platform_inventory_id,
         status: "mapped",
+        supplier_upload_id: @upload.id,
         last_seen: Time.current
       )
       mapping.save!

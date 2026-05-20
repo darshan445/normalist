@@ -8,7 +8,8 @@ module Api
           merchant: current_merchant,
           page: params[:page],
           per_page: params[:per_page],
-          supplier_id: params[:supplier_id]
+          supplier_id: params[:supplier_id],
+          suggestion: params[:suggestion]
         ))
       end
     end
