@@ -17,7 +17,8 @@ docker compose --env-file .env.docker up -d --build
 **Kamal** (production server `216.128.153.117`, same image and env — see [DEPLOYMENT.md](DEPLOYMENT.md)):
 
 ```bash
-kamal setup && kamal deploy
+bundle install && bundle binstubs kamal
+bin/kamal setup && bin/kamal deploy
 ```
 
 ## Tests

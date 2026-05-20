@@ -18,6 +18,7 @@ proxy:
   host: api.normalist.space
 
 registry:
+  server: ghcr.io
   username: darshan445
   password:
     - KAMAL_REGISTRY_PASSWORD
