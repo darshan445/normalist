@@ -19,6 +19,8 @@ Rails.application.routes.draw do
       get "dashboard", to: "dashboard#show"
       get "catalog", to: "catalog#show"
       get "review_queue", to: "review_queue#index"
+      post "review_queue/bulk_confirm", to: "review_decisions#bulk_confirm"
+      post "review_queue/bulk_reject", to: "review_decisions#bulk_reject"
       post "review_queue/:mapping_id/confirm", to: "review_decisions#confirm"
       post "review_queue/:mapping_id/reject", to: "review_decisions#reject"
       post "review_queue/:mapping_id/manual_match", to: "review_decisions#manual_match"

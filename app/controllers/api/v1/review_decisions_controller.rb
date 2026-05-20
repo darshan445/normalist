@@ -42,7 +42,32 @@ module Api
         render_not_reviewable
       end
 
+      def bulk_confirm
+        result = Mapping::Review::BulkConfirm.call(
+          merchant: current_merchant,
+          supplier_id: params[:supplier_id],
+          suggestion: params.fetch(:suggestion, "suggested")
+        )
+        render(json: serialize_bulk_result(result))
+      end
+
+      def bulk_reject
+        result = Mapping::Review::BulkReject.call(
+          merchant: current_merchant,
+          supplier_id: params[:supplier_id],
+          suggestion: params.fetch(:suggestion, "all")
+        )
+        render(json: serialize_bulk_result(result))
+      end
+
       private
+
+      def serialize_bulk_result(result)
+        {
+          succeeded: result.succeeded,
+          failed: result.failed
+        }
+      end
 
       def serialize_mapping(mapping)
         {

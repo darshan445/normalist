@@ -24,10 +24,14 @@ RSpec.describe Mapping::FastPass do
   end
 
   before do
+    file = double(
+      attached?: true,
+      open: nil,
+      filename: double(to_s: "stocks.csv")
+    )
+    allow(file).to receive(:open).and_yield(StringIO.new("stub"))
     allow(Ingestion::FileNormalizer).to receive(:call).and_return(rows)
-    allow(upload.file).to receive(:attached?).and_return(true)
-    allow(upload.file).to receive(:open).and_yield(StringIO.new("stub"))
-    allow(upload.file).to receive(:filename).and_return(instance_double("Filename", to_s: "stocks.csv"))
+    allow(upload).to receive(:file).and_return(file)
     allow(Shopify::InventoryUpdateJob).to receive(:perform_later)
   end
 
@@ -39,18 +43,20 @@ RSpec.describe Mapping::FastPass do
       master_sku: "MASTER-1",
       status: "mapped")
 
+    allow(Ingestion::FileNormalizer).to receive(:call).and_return([rows.first])
     result = described_class.call(upload: upload)
 
     expect(result.resolved_count).to eq(1)
+    expect(mapping.reload.pending_quantity).to eq(10)
     expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
       merchant.id,
       upload.id,
-      mapping.id,
-      10
+      mapping.id
     )
   end
 
   it "creates mapped dictionary entries and enqueues Shopify when a variant matches" do
+    allow(Ingestion::FileNormalizer).to receive(:call).and_return([rows.second])
     result = described_class.call(upload: upload)
 
     mapping = MappingDictionary.find_by!(merchant: merchant, supplier: supplier, supplier_code: "NEW-1")
@@ -58,21 +64,21 @@ RSpec.describe Mapping::FastPass do
     expect(mapping.master_sku).to eq("MASTER-1")
     expect(mapping.platform_variant_id).to eq(variant.platform_variant_id)
     expect(mapping.platform_inventory_id).to eq(variant.platform_inventory_id)
-    expect(result.resolved_count).to eq(2)
-    expect(result.unresolved_count).to eq(1)
+    expect(result.resolved_count).to eq(1)
+    expect(result.unresolved_count).to eq(0)
+    expect(mapping.pending_quantity).to eq(5)
     expect(Shopify::InventoryUpdateJob).to have_received(:perform_later).with(
       merchant.id,
       upload.id,
-      mapping.id,
-      5
+      mapping.id
     )
   end
 
   it "collects fully unmatched rows in output" do
     result = described_class.call(upload: upload)
 
-    expect(result.unmatched_rows.size).to eq(1)
-    expect(result.unmatched_rows.first["unique_code"]).to eq("UNKNOWN")
+    expect(result.unmatched_rows.size).to eq(2)
+    expect(result.unmatched_rows.map { |r| r["unique_code"] }).to contain_exactly("DICT-1", "UNKNOWN")
   end
 
   it "resolves dictionary rows by barcode when unique code is not mapped" do

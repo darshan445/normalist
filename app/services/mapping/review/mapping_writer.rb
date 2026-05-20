@@ -17,6 +17,7 @@ module Mapping
       def self.skip!(mapping:)
         mapping.update!(
           status: "skipped",
+          pending_quantity: nil,
           last_seen: Time.current
         )
         mapping

@@ -1,70 +1,96 @@
-.item {
-  padding: 1.25rem;
-  border-bottom: 1px solid var(--p-color-border-secondary);
+.tableScroll {
+  overflow-x: auto;
 }
 
-.item:last-child {
-  border-bottom: none;
-}
-
-.header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.suggestion {
-  padding: 0.75rem 1rem;
-  background: var(--p-color-bg-surface-secondary);
-  border-radius: var(--p-border-radius-200);
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.manualSection {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--p-color-border-secondary);
-}
-
-.searchResults {
-  margin-top: 0.5rem;
-  border: 1px solid var(--p-color-border-secondary);
-  border-radius: var(--p-border-radius-200);
-  max-height: 12rem;
-  overflow-y: auto;
-}
-
-.searchResultButton {
-  display: block;
+.mappingTable {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--p-color-border-secondary);
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
 }
 
-.searchResultButton:last-child {
+.mappingTable th,
+.mappingTable td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--p-color-border-secondary);
+}
+
+.mappingTable thead th {
+  font-weight: 600;
+  background: var(--p-color-bg-surface-secondary);
+  white-space: nowrap;
+}
+
+.groupHeaderRow th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--p-color-text-secondary);
+}
+
+.supplierGroup {
+  border-right: 2px solid var(--p-color-border);
+}
+
+.merchantGroup {
+  border-right: 2px solid var(--p-color-border);
+}
+
+.row:last-child td {
   border-bottom: none;
 }
 
-.searchResultButton:hover {
-  background: var(--p-color-bg-surface-hover);
+.mappingTable th:nth-child(4),
+.mappingTable td:nth-child(4) {
+  border-right: 2px solid var(--p-color-border);
+}
+
+.mappingTable th:nth-child(7),
+.mappingTable td:nth-child(7) {
+  border-right: 2px solid var(--p-color-border);
+}
+
+.supplierLastCell {
+  min-width: 12rem;
+}
+
+.merchantMatchCell {
+  min-width: 14rem;
+}
+
+.merchantLastCell {
+  min-width: 12rem;
+}
+
+.actionsCell {
+  min-width: 9rem;
+}
+
+.cellStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rowActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.errorCell {
+  background: var(--p-color-bg-surface-critical);
 }
 
 .pagination {
   display: flex;
   justify-content: center;
   padding-top: 1rem;
+}
+
+.filterField {
+  flex: 1;
+  min-width: 14rem;
 }

@@ -226,13 +226,15 @@ export default function Dashboard() {
       </BlockStack>
 
       {pendingReview.count > 0 ? (
-        <Banner
-          tone="warning"
-          action={{ content: "Review queue →", url: reviewHref }}
-        >
-          {pendingReview.count} code{pendingReview.count === 1 ? "" : "s"} need
-          mapping
-          {pendingReview.supplier ? ` for ${pendingReview.supplier.name}` : ""}
+        <Banner tone="warning">
+          <BlockStack gap="200">
+            <p>
+              {pendingReview.count} code{pendingReview.count === 1 ? "" : "s"} need
+              mapping
+              {pendingReview.supplier ? ` for ${pendingReview.supplier.name}` : ""}
+            </p>
+            <Link href={reviewHref}>Review queue →</Link>
+          </BlockStack>
         </Banner>
       ) : stats.suppliers_count > 0 ? (
         <Banner tone="success">

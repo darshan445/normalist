@@ -105,13 +105,53 @@ export async function fetchCatalog(path = "/api/v1/catalog", { shop, sessionToke
   return apiGet(path, { shop, sessionToken });
 }
 
-export async function fetchReviewQueue({ page = 1, perPage = 25, supplierId, shop, sessionToken } = {}) {
+export async function fetchReviewQueue({
+  page = 1,
+  perPage = 25,
+  supplierId,
+  suggestion,
+  shop,
+  sessionToken,
+} = {}) {
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("per_page", String(perPage));
   if (supplierId) params.set("supplier_id", supplierId);
+  if (suggestion) params.set("suggestion", suggestion);
 
   return apiGet(`/api/v1/review_queue?${params.toString()}`, { shop, sessionToken });
+}
+
+export async function bulkConfirmReviewQueue({
+  supplierId,
+  suggestion = "suggested",
+  shop,
+  sessionToken,
+} = {}) {
+  return apiPost("/api/v1/review_queue/bulk_confirm", {
+    shop,
+    sessionToken,
+    body: {
+      supplier_id: supplierId || undefined,
+      suggestion,
+    },
+  });
+}
+
+export async function bulkRejectReviewQueue({
+  supplierId,
+  suggestion = "all",
+  shop,
+  sessionToken,
+} = {}) {
+  return apiPost("/api/v1/review_queue/bulk_reject", {
+    shop,
+    sessionToken,
+    body: {
+      supplier_id: supplierId || undefined,
+      suggestion,
+    },
+  });
 }
 
 export async function confirmReviewMapping(mappingId, { shop, sessionToken } = {}) {

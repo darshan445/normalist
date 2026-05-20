@@ -101,21 +101,15 @@ module Mapping
       mapping = persist_mapping!(
         supplier_code: supplier_code,
         variant: variant,
-        status: "mapped"
+        status: "mapped",
+        quantities: quantities
       )
 
       row_count = quantities.size
       @resolved_count += row_count
       @unresolved_count -= row_count
 
-      quantities.each do |quantity|
-        Shopify::InventoryUpdateJob.perform_later(
-          @merchant.id,
-          @upload.id,
-          mapping.id,
-          quantity
-        )
-      end
+      ShopifyInventoryEnqueue.call(mapping: mapping)
     end
 
     def apply_review!(supplier_code:, variant:, quantities:, confidence_score:)
@@ -123,12 +117,13 @@ module Mapping
         supplier_code: supplier_code,
         variant: variant,
         status: "review",
-        confidence_score: confidence_score
+        confidence_score: confidence_score,
+        quantities: quantities
       )
       append_review_output!(supplier_code: supplier_code, quantities: quantities)
     end
 
-    def persist_mapping!(supplier_code:, variant:, status:, confidence_score: nil)
+    def persist_mapping!(supplier_code:, variant:, status:, confidence_score: nil, quantities: nil)
       mapping = @merchant.mapping_dictionaries.find_or_initialize_by(
         supplier: @supplier,
         supplier_code: supplier_code
@@ -145,6 +140,10 @@ module Mapping
         attributes[:master_sku] = variant.master_sku
         attributes[:platform_variant_id] = variant.platform_variant_id
         attributes[:platform_inventory_id] = variant.platform_inventory_id
+      end
+
+      if status.in?(%w[review mapped])
+        attributes[:pending_quantity] = Review::PendingQuantity.aggregate(quantities)
       end
 
       mapping.assign_attributes(attributes)
