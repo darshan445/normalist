@@ -39,6 +39,9 @@
 # Ignore CI service files.
 /.github
 
+# Kamal (secrets stay local)
+/.kamal
+
 # Ignore development files
 /.devcontainer
 

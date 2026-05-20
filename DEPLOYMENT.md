@@ -100,3 +100,48 @@ docker compose --env-file .env.docker down
 ```bash
 docker build -t normalist .
 ```
+
+---
+
+## Kamal (production server)
+
+Kamal uses the **same `Dockerfile`**, env vars, and images as Compose. Hostnames differ:
+
+| Compose (`.env.docker`) | Kamal (`config/deploy.yml`) |
+|-------------------------|-----------------------------|
+| `DATABASE_HOST=db` | `DATABASE_HOST=normalist-db` |
+| `REDIS_URL=redis://redis:6379/0` | `REDIS_URL=redis://normalist-redis:6379/0` |
+
+Keep **`.env.docker` unchanged** for Compose. For Kamal, copy values into **`.kamal/secrets`** (see `.kamal/secrets.example`). Set `POSTGRES_PASSWORD` to the same value as `DATABASE_PASSWORD`.
+
+### First-time setup
+
+```bash
+bundle install
+cp .kamal/secrets.example .kamal/secrets
+# edit .kamal/secrets — same values as .env.docker + KAMAL_REGISTRY_PASSWORD
+
+kamal accessory boot db
+kamal accessory boot redis
+kamal setup
+kamal deploy
+```
+
+### Server: 216.128.153.117
+
+- HTTPS: `https://api.normalist.space` (Kamal proxy)
+- Do **not** run Compose and Kamal on the same host at once (port conflicts on 5432, 6379, 80/443). Stop Compose before Kamal:
+
+```bash
+docker compose --env-file .env.docker down
+```
+
+### Useful Kamal commands
+
+```bash
+kamal deploy
+kamal app logs -f
+kamal app exec -r job --interactive bundle exec sidekiq -V
+kamal collation
+kamal accessory reboot db
+```

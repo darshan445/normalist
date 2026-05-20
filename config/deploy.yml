@@ -1,0 +1,83 @@
+# Kamal deploy — mirrors docker-compose.yml + .env.docker
+# Compose service names: db, redis → Kamal accessory hosts: normalist-db, normalist-redis
+
+service: normalist
+image: darshan445/normalist
+
+servers:
+  web:
+    hosts:
+      - 216.128.153.117
+  job:
+    hosts:
+      - 216.128.153.117
+    cmd: bundle exec sidekiq -C config/sidekiq.yml
+
+proxy:
+  ssl: true
+  host: api.normalist.space
+
+registry:
+  username: darshan445
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  secret:
+    - RAILS_MASTER_KEY
+    - HOST
+    - FRONTEND_URL
+    - CORS_ORIGINS
+    - SHOPIFY_CLIENT_ID
+    - SHOPIFY_CLIENT_SECRET
+    - GEMINI_API_KEY
+    - OPENAI_API_KEY
+    - DATABASE_NAME
+    - DATABASE_USERNAME
+    - DATABASE_PASSWORD
+    - DATABASE_PORT
+  clear:
+    RAILS_ENV: production
+    RAILS_LOG_LEVEL: info
+    WEB_CONCURRENCY: "1"
+    DATABASE_HOST: normalist-db
+    REDIS_URL: redis://normalist-redis:6379/0
+
+ssh:
+  user: root
+
+volumes:
+  - "normalist_storage:/rails/storage"
+
+builder:
+  arch: amd64
+
+accessories:
+  db:
+    image: pgvector/pgvector:pg17
+    host: 216.128.153.117
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: normalist_db
+        POSTGRES_DB: normalist_production
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+
+  redis:
+    image: valkey/valkey:8
+    host: 216.128.153.117
+    port: "127.0.0.1:6379:6379"
+    cmd: "valkey-server --save 60 1 --loglevel warning"
+    directories:
+      - data:/data
+
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  logs-sidekiq: app logs -f -r job
+  dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+  collation: app exec --reuse "./bin/docker-collation-refresh.sh"

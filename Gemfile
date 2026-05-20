@@ -23,6 +23,7 @@ gem "shopify_app"
 
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "bootsnap", require: false
+gem "kamal", require: false
 gem "thruster", require: false
 
 # Active Storage for supplier/catalog file uploads
