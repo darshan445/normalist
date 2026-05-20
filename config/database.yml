@@ -89,22 +89,9 @@ test:
 # for a full overview on how database connection configuration can be specified.
 #
 production:
-  primary: &primary_production
-    <<: *default
-    database: <%= ENV["DATABASE_NAME"] %>
-    username: <%= ENV["DATABASE_USERNAME"] %>
-    password: <%= ENV["DATABASE_PASSWORD"] %>
-    host: <%= ENV["DATABASE_HOST"] %>
-    port: <%= ENV["DATABASE_PORT"] %>
-  cache:
-    <<: *primary_production
-    database: <%= ENV["DATABASE_NAME"] %>_cache
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *primary_production
-    database: <%= ENV["DATABASE_NAME"] %>_queue
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *primary_production
-    database: <%= ENV["DATABASE_NAME"] %>_cable
-    migrations_paths: db/cable_migrate
+  <<: *default
+  database: <%= ENV["DATABASE_NAME"] %>
+  username: <%= ENV["DATABASE_USERNAME"] %>
+  password: <%= ENV["DATABASE_PASSWORD"] %>
+  host: <%= ENV["DATABASE_HOST"] %>
+  port: <%= ENV["DATABASE_PORT"] %>
