@@ -118,6 +118,7 @@ Keep **`.env.docker` unchanged** for Compose. For Kamal, copy values into **`.ka
 
 ```bash
 bundle install
+bundle binstubs kamal   # creates bin/kamal (or use: bundle exec kamal …)
 cp .kamal/secrets.example .kamal/secrets
 # edit .kamal/secrets — same values as .env.docker + KAMAL_REGISTRY_PASSWORD
 
