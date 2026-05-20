@@ -75,6 +75,7 @@ On first boot, `web` runs `db:prepare` (migrate/create DB).
 - Rails runs with `RAILS_ENV=production` and `force_ssl`. Terminate TLS at a reverse proxy (Caddy, nginx, Traefik) in front of port 3000.
 - Point `HOST` at the proxy’s public HTTPS URL (e.g. `https://api.normalist.space`).
 - Reinstall the Shopify app or re-auth after changing `HOST` so webhooks re-register.
+- Vercel frontend must set `NEXT_PUBLIC_API_URL=https://api.normalist.space` so OAuth opens on the API host (not `normalist.vercel.app/login`).
 
 ## Postgres collation warning
 
