@@ -17,4 +17,11 @@ Rails.application.configure do
   config.i18n.fallbacks = true
   config.active_record.dump_schema_after_migration = false
   config.active_record.attributes_for_inspect = [ :id ]
+  config.hosts << "api.normalist.space"
+  config.hosts << "localhost"
+  config.hosts << "127.0.0.1"
+  config.host_authorization = {
+    exclude: ->(request) { request.path == "/up" }
+  }
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 end

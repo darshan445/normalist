@@ -1,24 +1,23 @@
-# README
+# NormaList
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Rails API for supplier file ingestion, mapping, and Shopify inventory sync. The embedded admin UI lives in `frontend/` (Next.js).
 
-Things you may want to cover:
+## Development
 
-* Ruby version
+See `.env.example` for local environment variables. Run Rails on port 3000 and the frontend on 3001.
 
-* System dependencies
+## Deployment
 
-* Configuration
+Production uses **Docker Compose** only:
 
-* Database creation
+```bash
+docker compose --env-file .env.docker up -d --build
+```
 
-* Database initialization
+See [DEPLOYMENT.md](DEPLOYMENT.md) for full details.
 
-* How to run the test suite
+## Tests
 
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+```bash
+bundle exec rspec
+```
