@@ -91,18 +91,20 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: normalist_production
-    username: normalist
-    password: <%= ENV["NORMALIST_DATABASE_PASSWORD"] %>
+    database: <%= ENV["DATABASE_NAME"] %>
+    username: <%= ENV["DATABASE_USERNAME"] %>
+    password: <%= ENV["DATABASE_PASSWORD"] %>
+    host: <%= ENV["DATABASE_HOST"] %>
+    port: <%= ENV["DATABASE_PORT"] %>
   cache:
     <<: *primary_production
-    database: normalist_production_cache
+    database: <%= ENV["DATABASE_NAME"] %>_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: normalist_production_queue
+    database: <%= ENV["DATABASE_NAME"] %>_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: normalist_production_cable
+    database: <%= ENV["DATABASE_NAME"] %>_cable
     migrations_paths: db/cable_migrate
