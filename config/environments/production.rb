@@ -25,3 +25,4 @@ Rails.application.configure do
   }
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 end
+
