@@ -1,6 +1,7 @@
-import Script from "next/script";
-
-/** Shopify API key + App Bridge for fresh session tokens (idToken) in embedded admin. */
+/**
+ * App Bridge must be the first synchronous script from Shopify's CDN.
+ * Do not use next/script — it injects async and App Bridge aborts.
+ */
 export default function ShopifyScripts() {
   const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
   if (!apiKey) return null;
@@ -8,10 +9,8 @@ export default function ShopifyScripts() {
   return (
     <>
       <meta name="shopify-api-key" content={apiKey} />
-      <Script
-        src="https://cdn.shopify.com/shopifycloud/app-bridge.js"
-        strategy="beforeInteractive"
-      />
+      {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+      <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
     </>
   );
 }
