@@ -53,11 +53,12 @@ module Schema
         return []
       end
 
-      @upload.file.open do |file|
-        Ingestion::FileNormalizer.call(file, filename: @upload.file.filename.to_s)
-      end
-    rescue ArgumentError, StandardError => e
-      Rails.logger.error("[Schema::Discovery] Failed to parse upload #{@upload.id}: #{e.message}")
+      content = Ingestion::UploadFileContent.call(@upload)
+      return [] if content.blank?
+
+      Ingestion::FileNormalizer.call(content, filename: @upload.file.filename.to_s)
+    rescue ActiveStorage::FileNotFoundError, ArgumentError, StandardError => e
+      Rails.logger.error("[Schema::Discovery] Failed to parse upload #{@upload.id}: #{e.class} — #{e.message}")
       []
     end
 

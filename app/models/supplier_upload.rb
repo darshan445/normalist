@@ -15,9 +15,9 @@ class SupplierUpload < ApplicationRecord
       save!
       file.attach(uploaded_file)
       raise ActiveRecord::RecordInvalid, self unless file.attached?
-
-      SupplierSchemaDiscoveryJob.perform_later(id)
     end
+
+    SupplierSchemaDiscoveryJob.perform_later(id)
     self
   end
 

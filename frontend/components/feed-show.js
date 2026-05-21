@@ -79,7 +79,8 @@ export default function FeedShow({ supplierId, feedId }) {
       if (upload?.status === "failed") {
         setSuccessMessage(null);
         setFormError(upload.error_message || "Upload failed.");
-      } else if (upload?.status === "completed") {
+      } else if (upload?.status === "completed" || upload?.status === "needs_review") {
+        setSuccessMessage(null);
         setFormError(null);
       }
     } catch (error) {

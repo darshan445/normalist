@@ -46,12 +46,13 @@ module Mapping
 
       profile_columns = @supplier.supplier_profile.profile_hash
 
-      @upload.file.open do |file|
-        raw_rows = Ingestion::FileNormalizer.call(file, filename: @upload.file.filename.to_s)
-        SchemaRowExtractor.call(raw_rows, profile_columns)
-      end
-    rescue ArgumentError, StandardError => e
-      Rails.logger.error("[Mapping::FastPass] Failed to parse upload #{@upload.id}: #{e.message}")
+      content = Ingestion::UploadFileContent.call(@upload)
+      return [] if content.blank?
+
+      raw_rows = Ingestion::FileNormalizer.call(content, filename: @upload.file.filename.to_s)
+      SchemaRowExtractor.call(raw_rows, profile_columns)
+    rescue ActiveStorage::FileNotFoundError, ArgumentError, StandardError => e
+      Rails.logger.error("[Mapping::FastPass] Failed to parse upload #{@upload.id}: #{e.class} — #{e.message}")
       []
     end
 
