@@ -66,7 +66,8 @@ Use `DATABASE_HOST=localhost` in `.env` (not `.env.docker`).
 
 - **API:** `http://localhost:$WEB_PORT`
 - **Health:** `/up`
-- **Storage:** Docker volume `rails_storage` → `/rails/storage`
+- **Storage (dev):** disk under `storage/` (`config.active_storage.service = :local`)
+- **Storage (production):** Cloudflare R2 via `config/storage.yml` → `cloudflare_r2` (set `CLOUDFLARE_R2_*` in `.env.docker` / `.kamal/secrets`)
 
 On first boot, `web` runs `db:prepare` (migrate/create DB).
 

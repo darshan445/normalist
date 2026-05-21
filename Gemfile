@@ -26,7 +26,8 @@ gem "bootsnap", require: false
 gem "kamal", require: false
 gem "thruster", require: false
 
-# Active Storage for supplier/catalog file uploads
+# Active Storage for supplier/catalog file uploads (Cloudflare R2 uses S3 API)
+gem "aws-sdk-s3", require: false
 gem "image_processing", "~> 1.2"
 
 group :development, :test do
