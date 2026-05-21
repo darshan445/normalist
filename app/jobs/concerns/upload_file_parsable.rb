@@ -12,8 +12,9 @@ module UploadFileParsable
       return nil
     end
 
-    upload.file.open do |file|
-      return Ingestion::FileParser.call(file, filename: upload.file.filename.to_s)
-    end
+    content = Ingestion::UploadFileContent.call(upload)
+    return nil if content.blank?
+
+    Ingestion::FileParser.call(content, filename: upload.file.filename.to_s)
   end
 end

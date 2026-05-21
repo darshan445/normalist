@@ -58,10 +58,11 @@ module Api
         end
 
         def parse_upload_rows(upload, profile)
-          upload.file.open do |file|
-            raw_rows = Ingestion::FileNormalizer.call(file, filename: upload.file.filename.to_s)
-            Mapping::SchemaRowExtractor.call(raw_rows, profile.profile_hash)
-          end
+          content = Ingestion::UploadFileContent.call(upload)
+          return [] if content.blank?
+
+          raw_rows = Ingestion::FileNormalizer.call(content, filename: upload.file.filename.to_s)
+          Mapping::SchemaRowExtractor.call(raw_rows, profile.profile_hash)
         end
       end
     end
