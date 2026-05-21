@@ -13,7 +13,7 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
   config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL", "redis://localhost:6379/1") }
   config.active_job.queue_adapter = :sidekiq
-  config.active_storage.service = :local
+  config.active_storage.service = :cloudflare_r2
   config.i18n.fallbacks = true
   config.active_record.dump_schema_after_migration = false
   config.active_record.attributes_for_inspect = [ :id ]
