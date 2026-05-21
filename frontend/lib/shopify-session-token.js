@@ -1,30 +1,60 @@
-const STORAGE_KEY = "normalist_shopify_id_token";
+import { pickShopifyParams } from "./shopify-search-params";
 
-/** Shopify passes id_token on the embedded app URL on every Admin load. */
+/** Shopify passes id_token on the embedded app URL on initial Admin load only. */
 export function sessionTokenFromUrl() {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("id_token");
 }
 
-function persistSessionToken(token) {
-  if (typeof window === "undefined" || !token) return;
-  sessionStorage.setItem(STORAGE_KEY, token);
+function embeddedShopifyContext() {
+  const { host, embedded } = pickShopifyParams();
+  return Boolean(host || embedded);
 }
 
-function sessionTokenFromStorage() {
-  if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(STORAGE_KEY);
+function waitForAppBridge(maxMs = 8000) {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("no window"));
+      return;
+    }
+
+    const ready = () => window.shopify?.idToken;
+    if (ready()) {
+      resolve(window.shopify);
+      return;
+    }
+
+    const started = Date.now();
+    const tick = () => {
+      if (ready()) {
+        resolve(window.shopify);
+        return;
+      }
+      if (Date.now() - started > maxMs) {
+        reject(new Error("App Bridge not loaded"));
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
 /**
- * Session token for API calls. Prefer fresh id_token from URL; keep last token
- * in sessionStorage so client-side nav (e.g. /suppliers) still authenticates.
+ * Session token for API calls. In embedded admin, always request a fresh token
+ * from App Bridge (JWT expires in ~1 minute). Do not cache in sessionStorage.
  */
 export async function fetchSessionToken() {
-  const fromUrl = sessionTokenFromUrl();
-  if (fromUrl) {
-    persistSessionToken(fromUrl);
-    return fromUrl;
+  if (typeof window === "undefined") return null;
+
+  if (embeddedShopifyContext()) {
+    try {
+      const shopify = await waitForAppBridge();
+      return await shopify.idToken();
+    } catch {
+      return sessionTokenFromUrl();
+    }
   }
-  return sessionTokenFromStorage();
+
+  return sessionTokenFromUrl();
 }
