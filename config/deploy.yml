@@ -56,6 +56,8 @@ volumes:
 
 builder:
   arch: amd64
+  # Build on the VPS (local buildx cannot reach Docker Hub — DNS timeout on 10.210.162.37).
+  remote: ssh://root@216.128.153.117
 
 accessories:
   db:
