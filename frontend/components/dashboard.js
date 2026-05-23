@@ -141,7 +141,7 @@ export default function Dashboard() {
     {
       label: "Suppliers",
       value: stats.suppliers_count,
-      hint: stats.suppliers_count === 0 ? "Add a supplier to begin" : null,
+      hint: null,
       href: stats.suppliers_count === 0 ? suppliersHref : null,
     },
   ];

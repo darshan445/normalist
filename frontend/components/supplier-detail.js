@@ -11,15 +11,15 @@ import {
   Button,
   Badge,
   EmptyState,
+  Banner,
 } from "@shopify/polaris";
 import { pickShopifyParams } from "../lib/shopify-search-params";
 import { shopifyNavHref } from "../lib/shopify-nav-href";
 import { feedIcon, canAddMoreFeeds } from "../lib/feed-helpers";
 import { formatRelativeTime } from "../lib/format-relative-time";
-import MappingRow from "./mapping-row";
+import MappingStatsGrid from "./mapping-stats-grid";
 import ChooseFeedTypeModal from "./choose-feed-type-modal";
 import styles from "./supplier-detail.module.css";
-import mappingStyles from "./mappings.module.css";
 
 function SectionDivider() {
   return <hr className={styles.sectionDivider} />;
@@ -35,47 +35,41 @@ function FeedStatusBadge({ status }) {
   return <Badge>{status}</Badge>;
 }
 
-function MappingStatusBadge({ status }) {
-  if (status === "mapped") {
-    return <Badge tone="success">mapped</Badge>;
-  }
-  if (status === "review") {
-    return <Badge tone="attention">review</Badge>;
-  }
-  if (status === "pending") {
-    return <Badge tone="warning">pending</Badge>;
-  }
-  if (status === "skipped") {
-    return <Badge>skipped</Badge>;
-  }
-  return <Badge>{status}</Badge>;
-}
-
-function toMappingRowProps(row) {
-  return {
-    id: row.id,
-    code: row.supplier_code,
-    quantity: row.quantity ?? "—",
-  };
-}
-
 export default function SupplierDetail({
   supplier,
+  mappingStats,
   feeds,
-  activeMappings,
-  activeMappingsTotal,
-  pendingMappings,
-  reviewMappings = [],
 }) {
   const searchParams = useSearchParams();
   const shopifyParams = pickShopifyParams(searchParams);
   const suppliersHref = shopifyNavHref("/suppliers", shopifyParams);
+  const mappingsHref = shopifyNavHref(
+    `/suppliers/${supplier.id}/mappings`,
+    shopifyParams
+  );
+  const reviewPendingHref = shopifyNavHref(
+    `/review?supplier_id=${supplier.id}`,
+    shopifyParams
+  );
+  const reviewSuggestedHref = shopifyNavHref(
+    `/review?supplier_id=${supplier.id}&suggestion=suggested`,
+    shopifyParams
+  );
+
   const [feedModalOpen, setFeedModalOpen] = useState(false);
   const usedFeedTypes = feeds.map((feed) => feed.feed_type);
   const showAddFeed = canAddMoreFeeds(usedFeedTypes);
 
-  const pendingCount = pendingMappings.length;
-  const reviewCount = reviewMappings.length;
+  const stats = mappingStats ?? {
+    mapped: supplier.mappedCount ?? 0,
+    pending: supplier.pendingCount ?? 0,
+    skipped: supplier.skippedCount ?? 0,
+    review: supplier.reviewCount ?? 0,
+  };
+
+  const pendingCount = stats.pending;
+  const reviewCount = stats.review;
+  const mappingsTotal = stats.mapped + stats.pending + stats.skipped + stats.review;
 
   return (
     <BlockStack gap="500">
@@ -92,6 +86,25 @@ export default function SupplierDetail({
           </Button>
         </InlineStack>
       </BlockStack>
+
+      <MappingStatsGrid
+        mapped={stats.mapped}
+        pending={stats.pending}
+        skipped={stats.skipped}
+      />
+
+      {pendingCount > 0 ? (
+        <Banner tone="warning">
+          <BlockStack gap="200">
+            <p>
+              ⚠️ {pendingCount} code{pendingCount === 1 ? "" : "s"} need your attention
+            </p>
+            <div>
+              <Button url={reviewPendingHref}>Review pending →</Button>
+            </div>
+          </BlockStack>
+        </Banner>
+      ) : null}
 
       <SectionDivider />
 
@@ -177,84 +190,26 @@ export default function SupplierDetail({
         </BlockStack>
       </section>
 
-      {pendingCount > 0 ? (
-        <>
-          <SectionDivider />
-          <section id="mappings" className={styles.sectionAnchor}>
-            <BlockStack gap="300">
-              <InlineStack gap="200" blockAlign="center">
-                <Text as="h2" variant="headingMd">
-                  Pending Mappings
-                </Text>
-                <Text as="span" variant="bodyMd" tone="caution">
-                  ⚠️ {pendingCount}
-                </Text>
-              </InlineStack>
-
-              <Card padding="0">
-                <BlockStack gap="0">
-                  {pendingMappings.map((mapping) => (
-                    <MappingRow
-                      key={mapping.id}
-                      mapping={toMappingRowProps(mapping)}
-                    />
-                  ))}
-                </BlockStack>
-              </Card>
-
-              <div className={mappingStyles.footerAction}>
-                <Button variant="primary" size="large">
-                  Confirm All Mappings
-                </Button>
-              </div>
-            </BlockStack>
-          </section>
-        </>
-      ) : null}
-
       {reviewCount > 0 ? (
         <>
           <SectionDivider />
           <section className={styles.sectionAnchor}>
-            <BlockStack gap="300">
-              <InlineStack align="space-between" blockAlign="center">
-                <InlineStack gap="200" blockAlign="center">
-                  <Text as="h2" variant="headingMd">
-                    Review suggested mappings
-                  </Text>
-                  <Text as="span" variant="bodyMd" tone="caution">
-                    {reviewCount}
-                  </Text>
+            <Card>
+              <BlockStack gap="300">
+                <InlineStack align="space-between" blockAlign="center" wrap>
+                  <BlockStack gap="100">
+                    <Text as="h2" variant="headingMd">
+                      Review suggested mappings
+                    </Text>
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      {reviewCount} code{reviewCount === 1 ? "" : "s"} with AI suggestions
+                      awaiting confirm or skip.
+                    </Text>
+                  </BlockStack>
+                  <Button url={reviewSuggestedHref}>Open review queue</Button>
                 </InlineStack>
-                <Button
-                  url={shopifyNavHref(
-                    `/review?supplier_id=${supplier.id}`,
-                    shopifyParams
-                  )}
-                >
-                  Open review queue
-                </Button>
-              </InlineStack>
-
-              <Card padding="0">
-                <BlockStack gap="0">
-                  {reviewMappings.slice(0, 5).map((mapping) => (
-                    <div key={mapping.id} className={styles.activeMappingRow}>
-                      <Text as="span" variant="bodyMd">
-                        {mapping.supplier_code} → {mapping.master_sku || "—"}
-                      </Text>
-                      <span />
-                      <MappingStatusBadge status={mapping.status} />
-                    </div>
-                  ))}
-                </BlockStack>
-              </Card>
-              {reviewCount > 5 ? (
-                <Text as="p" variant="bodySm" tone="subdued">
-                  Showing 5 of {reviewCount} — open the review queue to confirm or reject.
-                </Text>
-              ) : null}
-            </BlockStack>
+              </BlockStack>
+            </Card>
           </section>
         </>
       ) : null}
@@ -262,38 +217,32 @@ export default function SupplierDetail({
       <SectionDivider />
 
       <section>
-        <BlockStack gap="300">
-          <InlineStack align="space-between" blockAlign="center">
+        <Card>
+          <BlockStack gap="300">
             <Text as="h2" variant="headingMd">
-              Mapped
+              Mappings
             </Text>
-            <Text as="p" variant="bodySm" tone="subdued">
-              Total {activeMappingsTotal}
-            </Text>
-          </InlineStack>
-
-          {activeMappings.length === 0 ? (
-            <Card>
-              <EmptyState heading="No active mappings yet">
+            {mappingsTotal === 0 ? (
+              <EmptyState heading="No mappings yet">
                 <p>
-                  Mappings appear here after supplier codes are resolved or confirmed.
+                  Supplier codes appear here after you upload a stock file and the
+                  engine resolves or flags them.
                 </p>
               </EmptyState>
-            </Card>
-          ) : (
-            <Card padding="0">
-              {activeMappings.map((row) => (
-                <div key={row.id} className={styles.activeMappingRow}>
-                  <Text as="span" variant="bodyMd">
-                    {row.supplier_code} → {row.master_sku || "──────────"}
-                  </Text>
-                  <span />
-                  <MappingStatusBadge status={row.status} />
-                </div>
-              ))}
-            </Card>
-          )}
-        </BlockStack>
+            ) : (
+              <Text as="p" variant="bodyMd" tone="subdued">
+                {mappingsTotal} supplier code{mappingsTotal === 1 ? "" : "s"} tracked for
+                this supplier. View mapped, pending, and skipped codes on the mappings
+                page.
+              </Text>
+            )}
+            <div>
+              <Button url={mappingsHref} variant="primary">
+                View all mappings
+              </Button>
+            </div>
+          </BlockStack>
+        </Card>
       </section>
 
       <ChooseFeedTypeModal

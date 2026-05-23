@@ -18,6 +18,7 @@ import { shopifyNavHref } from "../lib/shopify-nav-href";
 import { fetchSuppliers, createSupplier } from "../lib/api";
 import { fetchSessionToken } from "../lib/shopify-session-token";
 import AddSupplierModal from "./add-supplier-modal";
+import MappingStatsGrid from "./mapping-stats-grid";
 import styles from "./suppliers.module.css";
 
 function SupplierStatus({ status }) {
@@ -162,10 +163,12 @@ export default function Suppliers() {
                     <Text as="p" variant="bodyMd" fontWeight="semibold">
                       {supplier.name}
                     </Text>
-                    <Text as="p" variant="bodySm" tone="subdued">
-                      {supplier.mapped_count} mapped · {supplier.pending_count}{" "}
-                      pending
-                    </Text>
+                    <MappingStatsGrid
+                      mapped={supplier.mapped_count ?? 0}
+                      pending={supplier.pending_count ?? 0}
+                      skipped={supplier.skipped_count ?? 0}
+                      compact
+                    />
                   </div>
                   <SupplierStatus status={supplier.status} />
                 </Link>

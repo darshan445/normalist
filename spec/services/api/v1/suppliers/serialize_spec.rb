@@ -12,6 +12,8 @@ RSpec.describe Api::V1::Suppliers::Serialize do
       name: "Acme Wholesale",
       mapped_count: 0,
       pending_count: 0,
+      skipped_count: 0,
+      review_count: 0,
       status: "ok"
     )
   end

@@ -20,8 +20,9 @@ import {
   fetchReviewQueue,
   fetchSuppliers,
   fetchCatalog,
-  bulkConfirmReviewQueue,
-  bulkRejectReviewQueue,
+  confirmReviewMapping,
+  rejectReviewMapping,
+  manualMatchReviewMapping,
 } from "../lib/api";
 import { fetchSessionToken } from "../lib/shopify-session-token";
 import ReviewQueueRow from "./review-queue-row";
@@ -34,16 +35,18 @@ export default function ReviewQueue() {
   const searchParams = useSearchParams();
   const { shop, embedded } = pickShopifyParams(searchParams);
   const supplierFilterFromUrl = searchParams.get("supplier_id") || "";
+  const suggestionFilterFromUrl = searchParams.get("suggestion") || "";
 
   const [page, setPage] = useState(1);
   const [supplierFilter, setSupplierFilter] = useState(supplierFilterFromUrl);
-  const [suggestionFilter, setSuggestionFilter] = useState("");
+  const [suggestionFilter, setSuggestionFilter] = useState(suggestionFilterFromUrl);
   const [items, setItems] = useState([]);
   const [bulkBusy, setBulkBusy] = useState(null);
   const [bulkMessage, setBulkMessage] = useState(null);
   const [pendingBulkAction, setPendingBulkAction] = useState(null);
   const [catalogVariants, setCatalogVariants] = useState([]);
   const [catalogFilter, setCatalogFilter] = useState("");
+  const [selections, setSelections] = useState({});
   const [pagination, setPagination] = useState({
     page: 1,
     per_page: PER_PAGE,
@@ -55,8 +58,9 @@ export default function ReviewQueue() {
 
   useEffect(() => {
     setSupplierFilter(supplierFilterFromUrl);
+    setSuggestionFilter(suggestionFilterFromUrl);
     setPage(1);
-  }, [supplierFilterFromUrl]);
+  }, [supplierFilterFromUrl, suggestionFilterFromUrl]);
 
   const loadSuppliers = useCallback(async () => {
     try {
@@ -113,6 +117,14 @@ export default function ReviewQueue() {
   }, [page, supplierFilter, suggestionFilter, shop, embedded]);
 
   useEffect(() => {
+    const initialSelections = {};
+    items.forEach((item) => {
+      initialSelections[item.id] = item.suggested_variant?.id ?? "";
+    });
+    setSelections(initialSelections);
+  }, [items]);
+
+  useEffect(() => {
     loadSuppliers();
     loadCatalog();
   }, [loadSuppliers, loadCatalog]);
@@ -126,6 +138,14 @@ export default function ReviewQueue() {
   }
 
   function requestBulkAction(action) {
+    if (action === "skip_unmatched" && selectedCount > 0) {
+      setBulkMessage({
+        tone: "warning",
+        text: "Please confirm selected matches first before skipping unmatched rows.",
+      });
+      return;
+    }
+
     setPendingBulkAction(action);
   }
 
@@ -134,36 +154,68 @@ export default function ReviewQueue() {
     setPendingBulkAction(null);
   }
 
+  function handleVariantChange(itemId, variantId) {
+    setSelections((current) => ({ ...current, [itemId]: variantId }));
+  }
+
   async function runBulkAction(action) {
     setBulkBusy(action);
     setBulkMessage(null);
 
     try {
       const sessionToken = embedded ? await fetchSessionToken() : null;
-      const base = {
-        supplierId: supplierFilter || undefined,
-        shop,
-        sessionToken,
-      };
+      const requestOptions = { shop, sessionToken };
+      let succeeded = 0;
+      const failed = [];
 
-      let result;
-      if (action === "confirm_suggested") {
-        result = await bulkConfirmReviewQueue({ ...base, suggestion: "suggested" });
-      } else if (action === "reject_suggested") {
-        result = await bulkRejectReviewQueue({ ...base, suggestion: "suggested" });
-      } else if (action === "reject_unsuggested") {
-        result = await bulkRejectReviewQueue({ ...base, suggestion: "unsuggested" });
+      if (action === "confirm_selected") {
+        const targets = items.filter((item) => selections[item.id]);
+
+        for (const item of targets) {
+          const variantId = selections[item.id];
+
+          try {
+            const usesSuggestedMatch =
+              item.suggested_variant?.id && variantId === item.suggested_variant.id;
+            const result = usesSuggestedMatch
+              ? await confirmReviewMapping(item.id, requestOptions)
+              : await manualMatchReviewMapping(item.id, variantId, requestOptions);
+
+            if (result?.ok) {
+              succeeded += 1;
+            } else {
+              failed.push(item.id);
+            }
+          } catch {
+            failed.push(item.id);
+          }
+        }
+      } else if (action === "skip_unmatched") {
+        if (selectedCount > 0) {
+          setBulkMessage({
+            tone: "warning",
+            text: "Please confirm selected matches first before skipping unmatched rows.",
+          });
+          return;
+        }
+
+        const targets = items.filter((item) => !selections[item.id]);
+
+        for (const item of targets) {
+          try {
+            const result = await rejectReviewMapping(item.id, requestOptions);
+
+            if (result?.ok) {
+              succeeded += 1;
+            } else {
+              failed.push(item.id);
+            }
+          } catch {
+            failed.push(item.id);
+          }
+        }
       }
 
-      if (!result?.ok) {
-        setBulkMessage({
-          tone: "critical",
-          text: result?.data?.message || "Bulk action failed.",
-        });
-        return;
-      }
-
-      const { succeeded = 0, failed = [] } = result.data ?? {};
       const tone = failed.length > 0 ? "warning" : "success";
       const failedNote =
         failed.length > 0 ? ` ${failed.length} could not be processed.` : "";
@@ -211,8 +263,8 @@ export default function ReviewQueue() {
     { label: "Not suggested", value: "unsuggested" },
   ];
 
-  const selectedSupplierName =
-    suppliers.find((supplier) => supplier.id === supplierFilter)?.name ?? null;
+  const selectedCount = items.filter((item) => selections[item.id]).length;
+  const unmatchedCount = items.filter((item) => !selections[item.id]).length;
 
   return (
     <BlockStack gap="500">
@@ -240,7 +292,7 @@ export default function ReviewQueue() {
         </div>
         <div className={styles.filterField}>
           <Select
-            label="Show"
+            label="Suggestions"
             options={suggestionOptions}
             value={suggestionFilter}
             onChange={(value) => {
@@ -279,44 +331,36 @@ export default function ReviewQueue() {
       ) : (
         <>
           <Text as="p" variant="bodySm" tone="subdued">
-            {pagination.total_count} item{pagination.total_count === 1 ? "" : "s"} awaiting
-            review
+            {pagination.total_count} item{pagination.total_count === 1 ? "" : "s"} awaiting review
           </Text>
 
           <Card>
-            <BlockStack gap="300">
-              <Text as="h2" variant="headingSm">
-                Bulk actions
-              </Text>
-              <Text as="p" variant="bodySm" tone="subdued">
-                Bulk actions use the supplier filter above. Each action targets a fixed
-                group (suggested or not suggested) across all pages.
-              </Text>
-              <InlineStack gap="200" wrap>
-                <Button
-                  variant="primary"
-                  disabled={bulkBusy !== null}
-                  onClick={() => requestBulkAction("confirm_suggested")}
-                >
-                  Confirm all suggested
-                </Button>
-                <Button
-                  tone="critical"
-                  disabled={bulkBusy !== null}
-                  onClick={() => requestBulkAction("reject_suggested")}
-                >
-                  Skip all suggested
-                </Button>
-                <Button
-                  tone="critical"
-                  disabled={bulkBusy !== null}
-                  onClick={() => requestBulkAction("reject_unsuggested")}
-                >
-                  Skip all not suggested
-                </Button>
-              </InlineStack>
-            </BlockStack>
-          </Card>
+              <BlockStack gap="300">
+                <Text as="h2" variant="headingSm">
+                  Bulk actions
+                </Text>
+                <Text as="p" variant="bodySm" tone="subdued">
+                  Confirm rows where you picked a catalog match. Skip rows still on
+                  &ldquo;Select SKU or barcode…&rdquo;. Applies to this page only.
+                </Text>
+                <InlineStack gap="200" wrap>
+                  <Button
+                    variant="primary"
+                    disabled={bulkBusy !== null || selectedCount === 0}
+                    onClick={() => requestBulkAction("confirm_selected")}
+                  >
+                    Confirm All Selected
+                  </Button>
+                  <Button
+                    tone="critical"
+                    disabled={bulkBusy !== null || unmatchedCount === 0}
+                    onClick={() => requestBulkAction("skip_unmatched")}
+                  >
+                    Skip Unmatched
+                  </Button>
+                </InlineStack>
+              </BlockStack>
+            </Card>
 
           <TextField
             label="Filter catalog matches"
@@ -361,6 +405,8 @@ export default function ReviewQueue() {
                       key={item.id}
                       item={item}
                       catalogVariants={filteredCatalogVariants}
+                      selectedVariantId={selections[item.id] ?? ""}
+                      onVariantChange={(variantId) => handleVariantChange(item.id, variantId)}
                       shop={shop}
                       embedded={embedded}
                       onResolved={handleResolved}
@@ -387,7 +433,8 @@ export default function ReviewQueue() {
       <BulkActionConfirmModal
         open={pendingBulkAction !== null}
         action={pendingBulkAction}
-        supplierName={selectedSupplierName}
+        selectedCount={selectedCount}
+        unmatchedCount={unmatchedCount}
         loading={bulkBusy !== null}
         onConfirm={() => runBulkAction(pendingBulkAction)}
         onClose={closeBulkConfirm}

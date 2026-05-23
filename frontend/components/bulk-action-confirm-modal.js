@@ -3,50 +3,35 @@
 import { Modal, Text, BlockStack } from "@shopify/polaris";
 
 const ACTION_CONFIG = {
-  confirm_suggested: {
-    title: "Confirm all suggested matches?",
-    primary: "Confirm all suggested",
+  confirm_selected: {
+    title: "Confirm all selected matches?",
+    primary: "Confirm All Selected",
     destructive: false,
-    description:
-      "Every review item with a suggestion at 50% confidence or higher will be mapped using the suggested variant. This cannot be undone from the review queue.",
+    description: (count) =>
+      `${count} row${count === 1 ? "" : "s"} on this page with a catalog variant selected will be confirmed.`,
   },
-  reject_suggested: {
-    title: "Skip all suggested items?",
-    primary: "Skip all suggested",
+  skip_unmatched: {
+    title: "Skip all unmatched rows?",
+    primary: "Skip Unmatched",
     destructive: true,
-    description:
-      "Every suggested review item (50% confidence or higher) will be permanently skipped and will not appear in future uploads.",
-  },
-  reject_unsuggested: {
-    title: "Skip all not suggested items?",
-    primary: "Skip all not suggested",
-    destructive: true,
-    description:
-      "Every review item below 50% confidence will be permanently skipped and will not appear in future uploads.",
+    description: (count) =>
+      `${count} row${count === 1 ? "" : "s"} on this page without a catalog variant selected will be permanently skipped.`,
   },
 };
-
-function scopeLabel({ supplierName, action }) {
-  const supplierPart = supplierName ? `supplier “${supplierName}”` : "all suppliers";
-
-  if (action === "reject_unsuggested") {
-    return `${supplierPart}, items below 50% confidence`;
-  }
-
-  return `${supplierPart}, suggested items (50% confidence or higher)`;
-}
 
 export default function BulkActionConfirmModal({
   open,
   action,
-  supplierName,
+  selectedCount,
+  unmatchedCount,
   loading,
   onConfirm,
   onClose,
 }) {
   const config = action ? ACTION_CONFIG[action] : null;
+  const count = action === "confirm_selected" ? selectedCount : unmatchedCount;
 
-  if (!config) return null;
+  if (!config || count === 0) return null;
 
   return (
     <Modal
@@ -70,11 +55,10 @@ export default function BulkActionConfirmModal({
       <Modal.Section>
         <BlockStack gap="300">
           <Text as="p" variant="bodyMd">
-            {config.description}
+            {config.description(count)}
           </Text>
           <Text as="p" variant="bodySm" tone="subdued">
-            Scope: {scopeLabel({ supplierName, action })}. This runs across all
-            pages, not just the rows visible on this page.
+            Only rows on the current page are included.
           </Text>
         </BlockStack>
       </Modal.Section>

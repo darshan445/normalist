@@ -178,6 +178,21 @@ export async function fetchSupplier(supplierId, { shop, sessionToken }) {
   return apiGet(`/api/v1/suppliers/${supplierId}`, { shop, sessionToken });
 }
 
+export async function fetchSupplierMappings(
+  supplierId,
+  { page = 1, perPage = 50, status = "all", shop, sessionToken } = {}
+) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("per_page", String(perPage));
+  if (status) params.set("status", status);
+
+  return apiGet(
+    `/api/v1/suppliers/${supplierId}/mappings?${params.toString()}`,
+    { shop, sessionToken }
+  );
+}
+
 export async function createSupplier({ name }, { shop, sessionToken }) {
   return apiPost("/api/v1/suppliers", {
     shop,
@@ -246,6 +261,20 @@ export async function fetchFeed(supplierId, feedId, { shop, sessionToken }) {
 
 export async function fetchUpload(supplierId, uploadId, { shop, sessionToken }) {
   return apiGet(`/api/v1/suppliers/${supplierId}/uploads/${uploadId}`, {
+    shop,
+    sessionToken,
+  });
+}
+
+export async function fetchUploadStatus(supplierId, uploadId, { shop, sessionToken }) {
+  return apiGet(`/api/v1/suppliers/${supplierId}/uploads/${uploadId}/status`, {
+    shop,
+    sessionToken,
+  });
+}
+
+export async function fetchFeedUploads(supplierId, feedId, { shop, sessionToken }) {
+  return apiGet(`/api/v1/suppliers/${supplierId}/feeds/${feedId}/uploads`, {
     shop,
     sessionToken,
   });

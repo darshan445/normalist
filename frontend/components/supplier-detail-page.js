@@ -14,6 +14,8 @@ function toDetailSupplier(apiSupplier) {
     name: apiSupplier.name,
     mappedCount: apiSupplier.mapped_count ?? 0,
     pendingCount: apiSupplier.pending_count ?? 0,
+    skippedCount: apiSupplier.skipped_count ?? 0,
+    reviewCount: apiSupplier.review_count ?? 0,
     status: apiSupplier.status ?? "ok",
   };
 }
@@ -100,11 +102,8 @@ export default function SupplierDetailPage() {
   return (
     <SupplierDetail
       supplier={toDetailSupplier(detail.supplier)}
+      mappingStats={detail.mapping_stats}
       feeds={detail.feeds ?? []}
-      activeMappings={detail.active_mappings ?? []}
-      activeMappingsTotal={detail.active_mappings_total ?? 0}
-      pendingMappings={detail.pending_mappings ?? []}
-      reviewMappings={detail.review_mappings ?? []}
     />
   );
 }

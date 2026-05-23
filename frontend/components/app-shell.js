@@ -12,16 +12,8 @@ export default function AppShell({ children }) {
   const searchParams = useSearchParams();
   const shopifyParams = pickShopifyParams(searchParams);
 
-  const brandHref = shopifyNavHref("/", shopifyParams);
-
   return (
     <div className={styles.shell}>
-      <header className={styles.header}>
-        <Link href={brandHref} className={styles.brand}>
-          NormaList
-        </Link>
-      </header>
-
       <div className={styles.body}>
         <nav className={styles.sidebar} aria-label="Main navigation">
           <ul className={styles.navList}>
