@@ -1,0 +1,24 @@
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--p-color-text-link);
+  text-decoration: none;
+  font-weight: 550;
+  font-size: var(--p-font-size-325);
+  line-height: var(--p-font-line-height-400);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--p-color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--p-border-radius-100);
+}
+
+.muted {
+  color: var(--p-color-text-secondary);
+}

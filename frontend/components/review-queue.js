@@ -266,6 +266,24 @@ export default function ReviewQueue() {
   const selectedCount = items.filter((item) => selections[item.id]).length;
   const unmatchedCount = items.filter((item) => !selections[item.id]).length;
 
+  const reservedVariantIdsByItem = useMemo(() => {
+    const byItem = {};
+
+    for (const item of items) {
+      const reserved = new Set();
+
+      for (const other of items) {
+        if (other.id === item.id) continue;
+        const variantId = selections[other.id];
+        if (variantId) reserved.add(variantId);
+      }
+
+      byItem[item.id] = [...reserved];
+    }
+
+    return byItem;
+  }, [items, selections]);
+
   return (
     <BlockStack gap="500">
       <BlockStack gap="200">
@@ -273,8 +291,8 @@ export default function ReviewQueue() {
           Review queue
         </Text>
         <Text as="p" variant="bodyMd" tone="subdued">
-          Match supplier codes to your catalog. Rows are sorted from lowest to highest
-          confidence. Suggestions at 50% or above are pre-selected.
+          Match supplier codes to your catalog. Suggested matches appear first, then
+          codes we couldn&apos;t identify. Suggestions at 50% or above are pre-selected.
         </Text>
       </BlockStack>
 
@@ -405,6 +423,7 @@ export default function ReviewQueue() {
                       key={item.id}
                       item={item}
                       catalogVariants={filteredCatalogVariants}
+                      reservedVariantIds={reservedVariantIdsByItem[item.id] ?? []}
                       selectedVariantId={selections[item.id] ?? ""}
                       onVariantChange={(variantId) => handleVariantChange(item.id, variantId)}
                       shop={shop}

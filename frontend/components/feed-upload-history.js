@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Text,
   Card,
@@ -10,7 +9,7 @@ import {
   Spinner,
 } from "@shopify/polaris";
 import { formatRelativeTime } from "../lib/format-relative-time";
-import styles from "./feed-show.module.css";
+import { ReviewNeededLink } from "./review-needed-link";
 
 function statusCell(status, pendingCount) {
   if (status === "failed") return "❌ Failed";
@@ -28,14 +27,9 @@ export default function FeedUploadHistory({
     const pending = upload.pending_count ?? 0;
     const total = upload.total_codes ?? "—";
 
-    const pendingCell =
-      pending > 0 ? (
-        <Link href={reviewPendingHref} className={styles.historyPendingLink}>
-          {pending} ⚠️
-        </Link>
-      ) : (
-        String(pending)
-      );
+    const pendingCell = (
+      <ReviewNeededLink count={pending} href={reviewPendingHref} />
+    );
 
     return [
       formatRelativeTime(upload.created_at),
@@ -64,7 +58,7 @@ export default function FeedUploadHistory({
         ) : (
           <DataTable
             columnContentTypes={["text", "numeric", "numeric", "numeric", "text"]}
-            headings={["Date", "Total", "Resolved", "Pending", "Status"]}
+            headings={["Date", "Codes", "Resolved", "Need review", "Status"]}
             rows={rows}
           />
         )}

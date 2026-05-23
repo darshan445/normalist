@@ -3,8 +3,8 @@
 module Mapping
   module Review
     class UploadProgress
-      def self.record_resolution!(supplier_upload:, supplier_code:, resolved_rows:)
-        new(supplier_upload: supplier_upload, supplier_code: supplier_code).record_resolution!(resolved_rows: resolved_rows)
+      def self.record_resolution!(supplier_upload:, supplier_code:)
+        new(supplier_upload: supplier_upload, supplier_code: supplier_code).record_resolution!
       end
 
       def initialize(supplier_upload:, supplier_code:)
@@ -12,14 +12,14 @@ module Mapping
         @supplier_code = supplier_code
       end
 
-      def record_resolution!(resolved_rows:)
+      def record_resolution!
         return unless @supplier_upload
 
         @supplier_upload.with_lock do
           prune_output!
           @supplier_upload.update!(
-            resolved_count: @supplier_upload.resolved_count + resolved_rows,
-            unresolved_count: [ @supplier_upload.unresolved_count - resolved_rows, 0 ].max
+            resolved_count: @supplier_upload.resolved_count + 1,
+            unresolved_count: [ @supplier_upload.unresolved_count - 1, 0 ].max
           )
           finalize_upload_if_ready!
         end

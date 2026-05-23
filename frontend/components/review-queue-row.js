@@ -48,6 +48,7 @@ function CodeCell({ value }) {
 export default function ReviewQueueRow({
   item,
   catalogVariants,
+  reservedVariantIds = [],
   selectedVariantId,
   onVariantChange,
   shop,
@@ -73,14 +74,24 @@ export default function ReviewQueueRow({
     return [...byId.values()];
   }, [catalogVariants, suggested]);
 
+  const reservedIds = useMemo(
+    () => new Set(reservedVariantIds),
+    [reservedVariantIds]
+  );
+
+  const availableVariants = useMemo(
+    () => variantsForSelect.filter((variant) => !reservedIds.has(variant.id)),
+    [variantsForSelect, reservedIds]
+  );
+
   const variantOptions = useMemo(() => {
-    const options = variantsForSelect.map((variant) => ({
+    const options = availableVariants.map((variant) => ({
       label: variantSelectLabel(variant),
       value: variant.id,
     }));
 
     return options.sort((left, right) => left.label.localeCompare(right.label));
-  }, [variantsForSelect]);
+  }, [availableVariants]);
 
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
@@ -90,9 +101,24 @@ export default function ReviewQueueRow({
       return suggested;
     }
 
-    const variant = variantsForSelect.find((entry) => entry.id === selectedVariantId);
+    const variant =
+      variantsForSelect.find((entry) => entry.id === selectedVariantId) ||
+      availableVariants.find((entry) => entry.id === selectedVariantId);
     return merchantProductFromVariant(variant);
-  }, [variantsForSelect, selectedVariantId, suggested]);
+  }, [variantsForSelect, availableVariants, selectedVariantId, suggested]);
+
+  const selectedVariantLabel = useMemo(() => {
+    if (!selectedVariantId) return null;
+    if (suggested?.id === selectedVariantId) {
+      return variantSelectLabel({
+        master_sku: suggested.unique_code,
+        product_title: suggested.product,
+        variant_title: suggested.variant,
+      });
+    }
+    const variant = variantsForSelect.find((entry) => entry.id === selectedVariantId);
+    return variant ? variantSelectLabel(variant) : null;
+  }, [selectedVariantId, suggested, variantsForSelect]);
 
   const supplierProduct = item.supplier_product ?? {
     unique_code: item.supplier_code,
@@ -185,17 +211,33 @@ export default function ReviewQueueRow({
         </td>
 
         <td className={styles.merchantMatchCell}>
-          <Select
-            label="Merchant match"
-            labelHidden
-            options={[
-              { label: "Select SKU or barcode…", value: "" },
-              ...variantOptions,
-            ]}
-            value={selectedVariantId}
-            onChange={onVariantChange}
-            disabled={disabled}
-          />
+          {selectedVariantId && selectedVariantLabel ? (
+            <div className={styles.selectedMatch}>
+              <Text as="p" variant="bodySm">
+                {selectedVariantLabel}
+              </Text>
+              <Button
+                variant="plain"
+                size="slim"
+                disabled={disabled}
+                onClick={() => onVariantChange("")}
+              >
+                Change
+              </Button>
+            </div>
+          ) : (
+            <Select
+              label="Merchant match"
+              labelHidden
+              options={[
+                { label: "Select SKU or barcode…", value: "" },
+                ...variantOptions,
+              ]}
+              value=""
+              onChange={onVariantChange}
+              disabled={disabled}
+            />
+          )}
         </td>
         <td>
           <Text as="span" variant="bodySm" tone="subdued">

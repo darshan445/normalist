@@ -165,7 +165,10 @@ export default function Suppliers() {
                     </Text>
                     <MappingStatsGrid
                       mapped={supplier.mapped_count ?? 0}
-                      pending={supplier.pending_count ?? 0}
+                      pending={
+                        supplier.needs_attention_count ??
+                        (supplier.pending_count ?? 0) + (supplier.review_count ?? 0)
+                      }
                       skipped={supplier.skipped_count ?? 0}
                       compact
                     />

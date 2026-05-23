@@ -47,12 +47,8 @@ export default function SupplierDetail({
     `/suppliers/${supplier.id}/mappings`,
     shopifyParams
   );
-  const reviewPendingHref = shopifyNavHref(
+  const reviewHref = shopifyNavHref(
     `/review?supplier_id=${supplier.id}`,
-    shopifyParams
-  );
-  const reviewSuggestedHref = shopifyNavHref(
-    `/review?supplier_id=${supplier.id}&suggestion=suggested`,
     shopifyParams
   );
 
@@ -65,8 +61,11 @@ export default function SupplierDetail({
     pending: supplier.pendingCount ?? 0,
     skipped: supplier.skippedCount ?? 0,
     review: supplier.reviewCount ?? 0,
+    needs_attention: supplier.needsAttentionCount ?? 0,
   };
 
+  const needsAttentionCount =
+    stats.needs_attention ?? (stats.pending ?? 0) + (stats.review ?? 0);
   const pendingCount = stats.pending;
   const reviewCount = stats.review;
   const mappingsTotal = stats.mapped + stats.pending + stats.skipped + stats.review;
@@ -89,7 +88,7 @@ export default function SupplierDetail({
 
       <MappingStatsGrid
         mapped={stats.mapped}
-        pending={stats.pending}
+        pending={needsAttentionCount}
         skipped={stats.skipped}
       />
 
@@ -100,7 +99,7 @@ export default function SupplierDetail({
               ⚠️ {pendingCount} code{pendingCount === 1 ? "" : "s"} need your attention
             </p>
             <div>
-              <Button url={reviewPendingHref}>Review pending →</Button>
+              <Button url={reviewHref}>Review pending →</Button>
             </div>
           </BlockStack>
         </Banner>
@@ -206,7 +205,7 @@ export default function SupplierDetail({
                       awaiting confirm or skip.
                     </Text>
                   </BlockStack>
-                  <Button url={reviewSuggestedHref}>Open review queue</Button>
+                  <Button url={reviewHref}>Open review queue</Button>
                 </InlineStack>
               </BlockStack>
             </Card>

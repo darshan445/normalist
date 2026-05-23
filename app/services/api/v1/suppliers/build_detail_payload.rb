@@ -52,11 +52,15 @@ module Api
 
         def mapping_stats
           @mapping_stats ||= supplier.mapping_dictionaries.group(:status).count.then do |counts|
+            pending = counts["pending"] || 0
+            review = counts["review"] || 0
+
             {
               mapped: counts["mapped"] || 0,
-              pending: counts["pending"] || 0,
+              pending: pending,
               skipped: counts["skipped"] || 0,
-              review: counts["review"] || 0
+              review: review,
+              needs_attention: pending + review
             }
           end
         end

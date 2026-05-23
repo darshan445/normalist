@@ -33,14 +33,16 @@ RSpec.describe Mapping::UnmatchedResolver do
   end
 
   it "deduplicates codes and auto-maps high-confidence matches" do
+    metrics = Mapping::CodeCountTracker.new
+    metrics.mark_unresolved!("TSH-BLU-L")
+
     result = described_class.call(
       upload: upload,
       unmatched_rows: unmatched_rows,
-      initial_resolved_count: 0,
-      initial_unresolved_count: 2
+      code_metrics: metrics
     )
 
-    expect(result.resolved_count).to eq(2)
+    expect(result.resolved_count).to eq(1)
     expect(result.unresolved_count).to eq(0)
     expect(result.output).to eq([])
 
@@ -71,15 +73,17 @@ RSpec.describe Mapping::UnmatchedResolver do
       ]
     )
 
+    metrics = Mapping::CodeCountTracker.new
+    metrics.mark_unresolved!("TSH-BLU-L")
+
     result = described_class.call(
       upload: upload,
       unmatched_rows: unmatched_rows,
-      initial_resolved_count: 0,
-      initial_unresolved_count: 2
+      code_metrics: metrics
     )
 
     expect(Mapping::AiMatchConfirmer).to have_received(:call)
-    expect(result.resolved_count).to eq(2)
+    expect(result.resolved_count).to eq(1)
   end
 
   it "creates review mappings when distance is too high" do
@@ -89,11 +93,13 @@ RSpec.describe Mapping::UnmatchedResolver do
       ]
     )
 
+    metrics = Mapping::CodeCountTracker.new
+    metrics.mark_unresolved!("UNKNOWN")
+
     result = described_class.call(
       upload: upload,
       unmatched_rows: [ { "unique_code" => "UNKNOWN", "quantity" => 1, "raw_row" => {} } ],
-      initial_resolved_count: 0,
-      initial_unresolved_count: 1
+      code_metrics: metrics
     )
 
     mapping = MappingDictionary.find_by!(merchant: merchant, supplier: supplier, supplier_code: "UNKNOWN")

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -124,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_120000) do
     t.string "stage"
     t.string "status", default: "pending", null: false
     t.uuid "supplier_id", null: false
+    t.integer "unique_code_count"
     t.integer "unresolved_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["feed_id"], name: "index_supplier_uploads_on_feed_id"

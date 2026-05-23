@@ -21,8 +21,9 @@ RSpec.describe Mapping::Review::Confirm do
       merchant: merchant,
       supplier: supplier,
       status: "needs_review",
-      unresolved_count: 2,
+      unresolved_count: 1,
       resolved_count: 8,
+      unique_code_count: 9,
       output: [
         { "unique_code" => "SUP-1", "quantity" => 10 },
         { "unique_code" => "SUP-1", "quantity" => 5 }
@@ -62,7 +63,7 @@ RSpec.describe Mapping::Review::Confirm do
       ).once
 
       upload.reload
-      expect(upload.resolved_count).to eq(10)
+      expect(upload.resolved_count).to eq(9)
       expect(upload.unresolved_count).to eq(0)
       expect(upload.output).to eq([])
       expect(upload.status).to eq("completed")

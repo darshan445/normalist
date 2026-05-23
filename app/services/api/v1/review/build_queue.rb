@@ -50,7 +50,13 @@ module Api
           scope = @merchant.mapping_dictionaries
                            .review
                            .includes(:supplier_upload, supplier: :supplier_profile)
-                           .order(Arel.sql("confidence_score ASC NULLS LAST"), created_at: :desc)
+                           .order(
+                             Arel.sql(
+                               "CASE WHEN confidence_score >= #{SUGGESTION_THRESHOLD} THEN 0 ELSE 1 END"
+                             ),
+                             Arel.sql("confidence_score ASC NULLS LAST"),
+                             created_at: :desc
+                           )
           scope = scope.where(supplier_id: @supplier_id) if @supplier_id
           Mapping::Review::SuggestionScope.apply(scope, @suggestion)
         end

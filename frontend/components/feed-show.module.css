@@ -38,13 +38,3 @@
   gap: 0.35rem 1rem;
   align-items: baseline;
 }
-
-.historyPendingLink {
-  color: var(--p-color-text-link);
-  text-decoration: none;
-  font-weight: 550;
-}
-
-.historyPendingLink:hover {
-  text-decoration: underline;
-}
