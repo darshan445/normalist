@@ -27,7 +27,7 @@ export default function FeedUploadProcessing({
   const failed = upload.status === "failed";
   const pendingCount = upload.pending_count ?? upload.unresolved_count ?? 0;
   const resolvedCount = upload.resolved_count ?? 0;
-  const totalCodes = upload.total_codes ?? upload.row_count;
+  const totalCodes = upload.total_codes;
 
   if (!processing && !completed && !failed) return null;
 

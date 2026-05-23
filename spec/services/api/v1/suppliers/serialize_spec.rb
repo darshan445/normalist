@@ -14,6 +14,7 @@ RSpec.describe Api::V1::Suppliers::Serialize do
       pending_count: 0,
       skipped_count: 0,
       review_count: 0,
+      needs_attention_count: 0,
       status: "ok"
     )
   end
@@ -23,7 +24,13 @@ RSpec.describe Api::V1::Suppliers::Serialize do
     create(:mapping_dictionary, merchant:, supplier:, status: "mapped", supplier_code: "A-1")
 
     expect(
-      described_class.call(supplier, mapped_count: 5, pending_count: 2)
-    ).to include(mapped_count: 5, pending_count: 2, status: "warning")
+      described_class.call(supplier, mapped_count: 5, pending_count: 2, review_count: 3)
+    ).to include(
+      mapped_count: 5,
+      pending_count: 2,
+      review_count: 3,
+      needs_attention_count: 5,
+      status: "warning"
+    )
   end
 end

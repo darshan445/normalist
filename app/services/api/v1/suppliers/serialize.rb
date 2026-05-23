@@ -17,6 +17,7 @@ module Api
             pending_count: pending,
             skipped_count: skipped,
             review_count: review,
+            needs_attention_count: pending + review,
             status: (pending + review).positive? ? "warning" : "ok"
           }
         end

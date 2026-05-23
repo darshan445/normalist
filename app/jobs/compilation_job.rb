@@ -45,12 +45,15 @@ class CompilationJob < ApplicationJob
       needs_review_rows: needs_review
     )
 
+    counts = Mapping::UniqueCodeCounts.partition(all_resolved, unresolved)
+
     upload.update!(
       status: "completed",
-      stage: unresolved.any? ? "Complete — #{unresolved.size} row(s) still need review" : "Complete",
+      stage: unresolved.any? ? "Complete — #{counts[:unresolved_count]} code(s) still need review" : "Complete",
       output: output,
-      resolved_count: all_resolved.size,
-      unresolved_count: unresolved.size
+      unique_code_count: counts[:unique_code_count],
+      resolved_count: counts[:resolved_count],
+      unresolved_count: counts[:unresolved_count]
     )
     Broadcasts::UploadBroadcaster.call(upload, unresolved_rows: unresolved)
   rescue StandardError => e

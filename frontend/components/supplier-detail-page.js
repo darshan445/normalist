@@ -16,6 +16,7 @@ function toDetailSupplier(apiSupplier) {
     pendingCount: apiSupplier.pending_count ?? 0,
     skippedCount: apiSupplier.skipped_count ?? 0,
     reviewCount: apiSupplier.review_count ?? 0,
+    needsAttentionCount: apiSupplier.needs_attention_count ?? 0,
     status: apiSupplier.status ?? "ok",
   };
 }

@@ -81,6 +81,27 @@ RSpec.describe Mapping::FastPass do
     expect(result.unmatched_rows.map { |r| r["unique_code"] }).to contain_exactly("DICT-1", "UNKNOWN")
   end
 
+  it "counts duplicate supplier codes once in upload metrics" do
+    create(:mapping_dictionary,
+      merchant: merchant,
+      supplier: supplier,
+      supplier_code: "DICT-1",
+      master_sku: "MASTER-1",
+      status: "mapped")
+
+    duplicate_rows = [
+      { "SKU" => "DICT-1", "QTY" => "10", "UPC" => "999" },
+      { "SKU" => "DICT-1", "QTY" => "3", "UPC" => "999" }
+    ]
+    allow(Ingestion::FileNormalizer).to receive(:call).and_return(duplicate_rows)
+
+    result = described_class.call(upload: upload)
+
+    expect(result.resolved_count).to eq(1)
+    expect(result.unique_code_count).to eq(1)
+    expect(result.unresolved_count).to eq(0)
+  end
+
   it "resolves dictionary rows by barcode when unique code is not mapped" do
     create(:mapping_dictionary,
       merchant: merchant,

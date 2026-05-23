@@ -48,7 +48,13 @@ RSpec.describe Api::V1::Suppliers::BuildDetailPayload do
       pending_count: 2,
       upload_enabled: true
     )
-    expect(payload[:mapping_stats]).to eq(mapped: 1, pending: 1, skipped: 1, review: 0)
+    expect(payload[:mapping_stats]).to eq(
+      mapped: 1,
+      pending: 1,
+      skipped: 1,
+      review: 0,
+      needs_attention: 1
+    )
     expect(payload).not_to have_key(:active_mappings)
     expect(payload).not_to have_key(:pending_mappings)
   end

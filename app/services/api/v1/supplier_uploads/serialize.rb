@@ -40,10 +40,12 @@ module Api
         attr_reader :upload
 
         def total_codes
-          return @upload.row_count if @upload.row_count.present?
+          return @upload.unique_code_count if @upload.unique_code_count.present?
 
           counted = @upload.resolved_count.to_i + @upload.unresolved_count.to_i
-          counted.positive? ? counted : nil
+          return counted if counted.positive?
+
+          @upload.row_count if @upload.row_count.present?
         end
       end
     end

@@ -25,8 +25,7 @@ module Mapping
           ShopifyInventoryEnqueue.call(mapping: mapping)
           UploadProgress.record_resolution!(
             supplier_upload: upload,
-            supplier_code: mapping.supplier_code,
-            resolved_rows: PendingQuantity.resolved_row_count_for_mapping(mapping)
+            supplier_code: mapping.supplier_code
           )
         end
 

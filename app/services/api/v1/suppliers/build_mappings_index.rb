@@ -42,6 +42,7 @@ module Api
         def base_scope
           scope = @supplier.mapping_dictionaries.order(:supplier_code)
           return scope if @status == "all"
+          return scope.needs_attention if @status == "pending"
 
           scope.where(status: @status)
         end

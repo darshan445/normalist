@@ -9,7 +9,6 @@ import {
   BlockStack,
   InlineGrid,
   DataTable,
-  Badge,
   Banner,
   Spinner,
   EmptyState,
@@ -20,17 +19,8 @@ import { shopifyNavHref } from "../lib/shopify-nav-href";
 import { fetchDashboard } from "../lib/api";
 import { fetchSessionToken } from "../lib/shopify-session-token";
 import { formatRelativeTime } from "../lib/format-relative-time";
+import { ActivityOutcomeCell } from "./review-needed-link";
 import styles from "./app-shell.module.css";
-
-function ActivityStatus({ status, count }) {
-  if (status === "failed") {
-    return <Badge tone="critical">Failed</Badge>;
-  }
-  if (status === "warning") {
-    return <Badge tone="warning">{`⚠️ ${count}`}</Badge>;
-  }
-  return <Badge tone="success">{`✅ ${count}`}</Badge>;
-}
 
 function RecentActivityEmpty({ suppliersCount, suppliersHref }) {
   if (suppliersCount === 0) {
@@ -113,17 +103,9 @@ export default function Dashboard() {
   };
 
   const recentActivity = dashboard?.recent_activity ?? [];
-  const pendingReview = dashboard?.pending_review ?? { count: 0, supplier: null };
 
   const suppliersHref = shopifyNavHref("/suppliers", shopifyParams);
   const catalogHref = shopifyNavHref("/catalog", shopifyParams);
-
-  const reviewHref = pendingReview.supplier
-    ? shopifyNavHref(
-        `/review?supplier_id=${pendingReview.supplier.id}`,
-        shopifyParams
-      )
-    : shopifyNavHref("/review", shopifyParams);
 
   const statCards = [
     {
@@ -146,15 +128,25 @@ export default function Dashboard() {
     },
   ];
 
-  const activityRows = recentActivity.map((row) => [
-    row.supplier_name,
-    formatRelativeTime(row.uploaded_at),
-    <ActivityStatus
-      key={row.id}
-      status={row.status}
-      count={row.unresolved_count > 0 ? row.unresolved_count : row.resolved_count}
-    />,
-  ]);
+  const activityRows = recentActivity.map((row) => {
+    const supplierDetailHref = shopifyNavHref(
+      `/suppliers/${row.supplier_id}`,
+      shopifyParams
+    );
+    const reviewHref = shopifyNavHref(
+      `/review?supplier_id=${row.supplier_id}`,
+      shopifyParams
+    );
+    return [
+      <Link key={`${row.id}-supplier`} href={supplierDetailHref}>
+        {row.supplier_name}
+      </Link>,
+      formatRelativeTime(row.uploaded_at),
+      <span key={`${row.id}-result`}>
+        <ActivityOutcomeCell row={row} reviewHref={reviewHref} />
+      </span>,
+    ];
+  });
 
   if (loadState.status === "loading") {
     return (
@@ -213,7 +205,7 @@ export default function Dashboard() {
           {activityRows.length > 0 ? (
             <DataTable
               columnContentTypes={["text", "text", "text"]}
-              headings={["Supplier", "Uploaded", "Result"]}
+              headings={["Supplier", "Uploaded", "Outcome"]}
               rows={activityRows}
             />
           ) : (
@@ -225,18 +217,7 @@ export default function Dashboard() {
         </Card>
       </BlockStack>
 
-      {pendingReview.count > 0 ? (
-        <Banner tone="warning">
-          <BlockStack gap="200">
-            <p>
-              {pendingReview.count} code{pendingReview.count === 1 ? "" : "s"} need
-              mapping
-              {pendingReview.supplier ? ` for ${pendingReview.supplier.name}` : ""}
-            </p>
-            <Link href={reviewHref}>Review queue →</Link>
-          </BlockStack>
-        </Banner>
-      ) : stats.suppliers_count > 0 ? (
+      {stats.pending_mappings_count === 0 && stats.suppliers_count > 0 ? (
         <Banner tone="success">
           All supplier codes are mapped — you&apos;re up to date.
         </Banner>

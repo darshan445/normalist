@@ -51,8 +51,7 @@ class SupplierSchemaDiscoveryJob < ApplicationJob
       phase_three = Mapping::UnmatchedResolver.call(
         upload: upload,
         unmatched_rows: fast_pass.unmatched_rows,
-        initial_resolved_count: resolved_count,
-        initial_unresolved_count: unresolved_count
+        code_metrics: fast_pass.code_metrics
       )
       resolved_count = phase_three.resolved_count
       unresolved_count = phase_three.unresolved_count
@@ -64,6 +63,7 @@ class SupplierSchemaDiscoveryJob < ApplicationJob
       status: unresolved_count.zero? ? "completed" : "needs_review",
       stage: "complete",
       error_message: nil,
+      unique_code_count: fast_pass.unique_code_count,
       resolved_count: resolved_count,
       unresolved_count: unresolved_count,
       output: output

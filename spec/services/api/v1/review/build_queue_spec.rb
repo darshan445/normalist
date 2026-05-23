@@ -100,7 +100,7 @@ RSpec.describe Api::V1::Review::BuildQueue do
     expect(payload[:items].first[:supplier_code]).to eq("SUP-1")
   end
 
-  it "orders by confidence ascending and hides suggestions below 50%" do
+  it "orders suggested items before unsuggested, then by confidence ascending" do
     low = create(
       :mapping_dictionary,
       merchant: merchant,
@@ -125,7 +125,7 @@ RSpec.describe Api::V1::Review::BuildQueue do
     payload = described_class.call(merchant: merchant, supplier_id: supplier.id)
     codes = payload[:items].map { |item| item[:supplier_code] }
 
-    expect(codes).to eq([ "LOW-1", "SUP-1", "HIGH-1" ])
+    expect(codes).to eq([ "HIGH-1", "SUP-1", "LOW-1" ])
     expect(payload[:items].find { |item| item[:supplier_code] == "LOW-1" }[:suggested_variant]).to be_nil
     expect(payload[:items].find { |item| item[:supplier_code] == "HIGH-1" }[:suggested_variant]).to be_present
   end

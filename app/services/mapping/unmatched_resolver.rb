@@ -12,22 +12,16 @@ module Mapping
       :stage_message
     )
 
-    def self.call(upload:, unmatched_rows:, initial_resolved_count:, initial_unresolved_count:)
-      new(
-        upload: upload,
-        unmatched_rows: unmatched_rows,
-        initial_resolved_count: initial_resolved_count,
-        initial_unresolved_count: initial_unresolved_count
-      ).call
+    def self.call(upload:, unmatched_rows:, code_metrics:)
+      new(upload: upload, unmatched_rows: unmatched_rows, code_metrics: code_metrics).call
     end
 
-    def initialize(upload:, unmatched_rows:, initial_resolved_count:, initial_unresolved_count:)
+    def initialize(upload:, unmatched_rows:, code_metrics:)
       @upload = upload
       @merchant = upload.merchant
       @supplier = upload.supplier
       @unmatched_rows = unmatched_rows
-      @resolved_count = initial_resolved_count
-      @unresolved_count = initial_unresolved_count
+      @metrics = code_metrics
       @review_output = []
     end
 
@@ -105,9 +99,7 @@ module Mapping
         quantities: quantities
       )
 
-      row_count = quantities.size
-      @resolved_count += row_count
-      @unresolved_count -= row_count
+      @metrics.mark_resolved!(supplier_code)
 
       ShopifyInventoryEnqueue.call(mapping: mapping)
     end
@@ -169,15 +161,15 @@ module Mapping
 
     def finished(stage_message)
       Result.new(
-        resolved_count: @resolved_count,
-        unresolved_count: [ @unresolved_count, 0 ].max,
+        resolved_count: @metrics.resolved_count,
+        unresolved_count: @metrics.unresolved_count,
         output: @review_output,
         stage_message: stage_message
       )
     end
 
     def phase_three_message(unique_code_count)
-      "Complete — resolved #{@resolved_count} rows (#{unique_code_count} unique codes via embedding)"
+      "Complete — resolved #{@metrics.resolved_count} codes (#{unique_code_count} unmatched processed via embedding)"
     end
   end
 end

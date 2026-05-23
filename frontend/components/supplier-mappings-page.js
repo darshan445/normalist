@@ -158,12 +158,16 @@ export default function SupplierMappingsPage() {
             All mappings
           </Text>
           {pagination.total_count > 0 && statusFilter === "pending" ? (
-            <Button url={reviewPendingHref}>Review pending</Button>
+            <Button url={reviewPendingHref}>Open review queue</Button>
           ) : null}
         </InlineStack>
         <Text as="p" variant="bodySm" tone="subdued">
           {pagination.total_count} code{pagination.total_count === 1 ? "" : "s"}
-          {statusFilter !== "all" ? ` · ${statusFilter}` : ""}
+          {statusFilter === "pending"
+            ? " · awaiting mapping or review"
+            : statusFilter !== "all"
+              ? ` · ${statusFilter}`
+              : ""}
         </Text>
       </BlockStack>
 

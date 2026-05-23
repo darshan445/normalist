@@ -2,7 +2,14 @@
 
 module Mapping
   class FastPass
-    Result = Data.define(:resolved_count, :unresolved_count, :unmatched_rows, :stage_message)
+    Result = Data.define(
+      :resolved_count,
+      :unresolved_count,
+      :unique_code_count,
+      :unmatched_rows,
+      :stage_message,
+      :code_metrics
+    )
 
     def self.call(upload:)
       new(upload: upload).call
@@ -22,17 +29,18 @@ module Mapping
       return empty_result("No rows to process") if rows.empty?
 
       @mapped_by_code = load_mapped_dictionary
-      @resolved_count = 0
-      @unresolved_count = 0
+      @metrics = CodeCountTracker.new
       @unmatched_rows = []
 
       rows.each { |row| process_row(row) }
 
       Result.new(
-        resolved_count: @resolved_count,
-        unresolved_count: @unresolved_count,
+        resolved_count: @metrics.resolved_count,
+        unresolved_count: @metrics.unresolved_count,
+        unique_code_count: @metrics.unique_code_count,
         unmatched_rows: @unmatched_rows,
-        stage_message: completion_message
+        stage_message: completion_message,
+        code_metrics: @metrics
       )
     end
 
@@ -94,7 +102,7 @@ module Mapping
       Review::PendingQuantity.merge_on_mapping!(mapping, row[:quantity])
       mapping.update!(supplier_upload_id: @upload.id) if mapping.supplier_upload_id.blank?
       mapping.touch_last_seen!
-      @resolved_count += 1
+      @metrics.mark_resolved!(row[:unique_code])
 
       ShopifyInventoryEnqueue.call(mapping: mapping)
     end
@@ -125,7 +133,7 @@ module Mapping
     end
 
     def collect_unmatched!(row)
-      @unresolved_count += 1
+      @metrics.mark_unresolved!(row[:unique_code])
       @unmatched_rows << {
         "unique_code" => row[:unique_code],
         "barcode" => row[:barcode],
@@ -136,8 +144,8 @@ module Mapping
 
     def completion_message
       parts = []
-      parts << "#{@resolved_count} resolved" if @resolved_count.positive?
-      parts << "#{@unresolved_count} need attention" if @unresolved_count.positive?
+      parts << "#{@metrics.resolved_count} resolved" if @metrics.resolved_count.positive?
+      parts << "#{@metrics.unresolved_count} need attention" if @metrics.unresolved_count.positive?
       return "Fast-pass complete" if parts.empty?
 
       "Fast-pass complete — #{parts.join(', ')}"
@@ -147,8 +155,10 @@ module Mapping
       Result.new(
         resolved_count: 0,
         unresolved_count: 0,
+        unique_code_count: 0,
         unmatched_rows: [],
-        stage_message: message
+        stage_message: message,
+        code_metrics: CodeCountTracker.new
       )
     end
   end

@@ -1,6 +1,7 @@
 export function shopifyNavHref(path, { shop, host, embedded, idToken }) {
-  const href = path.startsWith("/") ? path : `/${path}`;
-  const params = new URLSearchParams();
+  const [rawPath, existingQuery = ""] = path.split("?", 2);
+  const href = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+  const params = new URLSearchParams(existingQuery);
 
   if (shop) params.set("shop", shop);
   if (host) params.set("host", host);
