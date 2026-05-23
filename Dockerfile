@@ -1,6 +1,3 @@
-# syntax=docker/dockerfile:1
-# check=error=true
-
 # Production image for docker compose / manual deploy:
 # docker build -t normalist .
 # docker compose --env-file .env.docker up -d --build
