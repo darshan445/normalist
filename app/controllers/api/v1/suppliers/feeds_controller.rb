@@ -67,6 +67,7 @@ module Api
               id: @supplier.id,
               name: @supplier.name
             },
+            supplier_profile: Api::V1::SupplierProfiles::Serialize.call(@supplier.supplier_profile),
             feed: Api::V1::Feeds::Serialize.call(feed, latest_upload: latest_upload_for(feed))
           }
         end

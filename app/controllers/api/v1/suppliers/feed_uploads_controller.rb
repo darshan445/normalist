@@ -34,7 +34,8 @@ module Api
           render(
             json: {
               upload: Api::V1::SupplierUploads::Serialize.call(upload),
-              feed: Api::V1::Feeds::Serialize.call(@feed, latest_upload: upload)
+              feed: Api::V1::Feeds::Serialize.call(@feed, latest_upload: upload),
+              supplier_profile: Api::V1::SupplierProfiles::Serialize.call(@supplier.supplier_profile)
             },
             status: :created
           )

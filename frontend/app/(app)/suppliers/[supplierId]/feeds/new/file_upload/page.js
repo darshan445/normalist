@@ -1,6 +1,9 @@
-import SetupFileUploadFeed from "../../../../../../../components/setup-file-upload-feed";
+import { redirect } from "next/navigation";
 
-export default async function NewFileUploadFeedPage({ params }) {
+export default async function LegacyFileUploadFeedPage({ params, searchParams }) {
   const { supplierId } = await params;
-  return <SetupFileUploadFeed supplierId={supplierId} />;
+  const query = await searchParams;
+  const qs = new URLSearchParams({ ...query, type: "file_upload" }).toString();
+
+  redirect(`/suppliers/${supplierId}/feeds/setup?${qs}`);
 }

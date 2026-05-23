@@ -58,7 +58,12 @@ RSpec.describe "Api::V1::Suppliers", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["supplier"]["id"]).to eq(supplier.id)
       expect(response.parsed_body["feeds"]).to be_an(Array)
-      expect(response.parsed_body["active_mappings"]).to be_an(Array)
+      expect(response.parsed_body["mapping_stats"]).to include(
+        "mapped" => 0,
+        "pending" => 0,
+        "skipped" => 0,
+        "review" => 0
+      )
     end
 
     it "returns not found for another merchant's supplier" do

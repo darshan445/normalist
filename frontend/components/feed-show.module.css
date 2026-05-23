@@ -1,0 +1,50 @@
+.progressBar {
+  height: 0.5rem;
+  border-radius: var(--p-border-radius-100);
+  background: var(--p-color-bg-fill-secondary);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--p-color-bg-fill-brand);
+  transition: width 0.35s ease;
+}
+
+.stepList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stepIcon {
+  width: 1.25rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  align-items: baseline;
+}
+
+.historyPendingLink {
+  color: var(--p-color-text-link);
+  text-decoration: none;
+  font-weight: 550;
+}
+
+.historyPendingLink:hover {
+  text-decoration: underline;
+}

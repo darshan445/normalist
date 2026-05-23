@@ -26,8 +26,14 @@ Rails.application.routes.draw do
       post "review_queue/:mapping_id/manual_match", to: "review_decisions#manual_match"
       get "merchants/catalog_sync_status", to: "merchants#catalog_sync_status"
       resources :suppliers, only: %i[index show create] do
-        resources :uploads, only: :show, module: :suppliers
+        resources :mappings, only: :index, module: :suppliers
+        resources :uploads, only: :show, module: :suppliers do
+          member do
+            get :status
+          end
+        end
         resources :feeds, only: %i[create show update], module: :suppliers do
+          resources :uploads, only: :index, module: :feeds
           resource :upload, only: :create, controller: "feed_uploads"
         end
       end

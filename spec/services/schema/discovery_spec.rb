@@ -25,8 +25,8 @@ RSpec.describe Schema::Discovery do
       }
     )
     allow(upload.file).to receive(:attached?).and_return(true)
-    allow(upload.file).to receive(:open).and_yield(StringIO.new("stub"))
     allow(upload.file).to receive(:filename).and_return(instance_double("Filename", to_s: "stocks.xlsx"))
+    allow(Ingestion::UploadFileContent).to receive(:call).with(upload).and_return("stub")
   end
 
   it "persists file_schema_map on supplier profile" do
@@ -34,6 +34,8 @@ RSpec.describe Schema::Discovery do
 
     expect(result).to be_success
     expect(result.stage).to eq("Column schema discovered")
+    expect(result.row_count).to eq(1)
+    expect(result.profile_stage).to eq("ai_detection")
 
     profile = supplier.reload.supplier_profile
     expect(profile.unique_column).to eq("VND_SKU_NUM")
@@ -63,6 +65,7 @@ RSpec.describe Schema::Discovery do
 
     expect(result).to be_success
     expect(result.stage).to eq("Column layout unchanged — existing schema kept")
+    expect(result.profile_stage).to eq("profile_cache")
     expect(Schema::AiSchemaScanner).not_to have_received(:call)
 
     profile = supplier.reload.supplier_profile

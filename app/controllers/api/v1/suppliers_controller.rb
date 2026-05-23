@@ -7,13 +7,17 @@ module Api
         suppliers = current_merchant.suppliers.order(name: :asc)
         pending_counts = mapping_counts_by_supplier("pending")
         mapped_counts = mapping_counts_by_supplier("mapped")
+        skipped_counts = mapping_counts_by_supplier("skipped")
+        review_counts = mapping_counts_by_supplier("review")
 
         render(json: {
           suppliers: suppliers.map { |supplier|
             Api::V1::Suppliers::Serialize.call(
               supplier,
               mapped_count: mapped_counts[supplier.id] || 0,
-              pending_count: pending_counts[supplier.id] || 0
+              pending_count: pending_counts[supplier.id] || 0,
+              skipped_count: skipped_counts[supplier.id] || 0,
+              review_count: review_counts[supplier.id] || 0
             )
           }
         })

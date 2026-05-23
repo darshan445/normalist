@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Text,
   Button,
@@ -48,6 +48,8 @@ function CodeCell({ value }) {
 export default function ReviewQueueRow({
   item,
   catalogVariants,
+  selectedVariantId,
+  onVariantChange,
   shop,
   embedded,
   onResolved,
@@ -80,15 +82,8 @@ export default function ReviewQueueRow({
     return options.sort((left, right) => left.label.localeCompare(right.label));
   }, [variantsForSelect]);
 
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    suggested?.id ?? ""
-  );
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setSelectedVariantId(suggested?.id ?? "");
-  }, [suggested?.id, item.id]);
 
   const selectedProduct = useMemo(() => {
     if (suggested?.id && selectedVariantId === suggested.id) {
@@ -198,7 +193,7 @@ export default function ReviewQueueRow({
               ...variantOptions,
             ]}
             value={selectedVariantId}
-            onChange={setSelectedVariantId}
+            onChange={onVariantChange}
             disabled={disabled}
           />
         </td>

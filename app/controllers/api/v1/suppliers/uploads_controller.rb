@@ -8,7 +8,11 @@ module Api
         before_action :set_upload
 
         def show
-          render(json: { upload: Api::V1::SupplierUploads::Serialize.call(@upload) })
+          render_upload_status
+        end
+
+        def status
+          render_upload_status
         end
 
         private
@@ -23,6 +27,10 @@ module Api
           @upload = @supplier.supplier_uploads.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render(json: { error: "not_found", message: "Upload not found" }, status: :not_found)
+        end
+
+        def render_upload_status
+          render(json: { upload: Api::V1::SupplierUploads::Serialize.call(@upload) })
         end
       end
     end

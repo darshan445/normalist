@@ -1,9 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Modal, ChoiceList, Banner, Text, BlockStack } from "@shopify/polaris";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { shopifyNavHref } from "../lib/shopify-nav-href";
 import { buildFeedTypeChoices, availableFeedTypes } from "../lib/feed-helpers";
 
 export default function ChooseFeedTypeModal({
@@ -13,7 +11,6 @@ export default function ChooseFeedTypeModal({
   shopifyParams,
   existingFeeds = [],
 }) {
-  const router = useRouter();
   const usedFeedTypes = useMemo(
     () => existingFeeds.map((feed) => feed.feed_type),
     [existingFeeds]
@@ -37,14 +34,18 @@ export default function ChooseFeedTypeModal({
     const selected = feedType[0];
     if (!selected || !available.includes(selected)) return;
 
-    const path =
-      selected === "google_sheets"
-        ? `/suppliers/${supplierId}/feeds/new/google_sheets`
-        : `/suppliers/${supplierId}/feeds/new/file_upload`;
+    const params = new URLSearchParams();
+    params.set("type", selected);
+    if (shopifyParams.shop) params.set("shop", shopifyParams.shop);
+    if (shopifyParams.host) params.set("host", shopifyParams.host);
+    if (shopifyParams.embedded) params.set("embedded", "1");
+    if (shopifyParams.idToken) params.set("id_token", shopifyParams.idToken);
+
+    const href = `/suppliers/${supplierId}/feeds/setup?${params.toString()}`;
 
     handleClose();
-    router.push(shopifyNavHref(path, shopifyParams));
-  }, [feedType, available, supplierId, shopifyParams, router, handleClose]);
+    window.location.assign(href);
+  }, [feedType, available, supplierId, shopifyParams, handleClose]);
 
   const allTypesAdded = available.length === 0;
 
