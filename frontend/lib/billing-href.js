@@ -11,8 +11,12 @@ export function billingHref(shopifyParams) {
   return shopifyNavHref("/billing", shopifyParams);
 }
 
+export function subscriptionHref(shopifyParams) {
+  return shopifyNavHref("/subscription", shopifyParams);
+}
+
 export function pricingHref(shopifyParams) {
-  return shopifyNavHref("/pricing", shopifyParams);
+  return subscriptionHref(shopifyParams);
 }
 
 export function subscribeButtonLabel(price) {

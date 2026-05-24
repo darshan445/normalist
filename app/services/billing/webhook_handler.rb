@@ -124,9 +124,27 @@ module Billing
     end
 
     def handle_cancelled(subscription)
+      if subscription.billing_on.present? && subscription.billing_on.end_of_day >= Time.current
+        subscription.update!(
+          cancelled_at: subscription.cancelled_at || Time.current,
+          shopify_payload: subscription_payload
+        )
+
+        @merchant.update!(plan_status: "cancelled")
+
+        Billing::PlanChangeRecorder.call(
+          merchant: @merchant,
+          subscription: subscription,
+          to_plan: subscription.plan.key,
+          reason: "cancel",
+          initiated_by: "merchant"
+        )
+        return
+      end
+
       subscription.update!(
         status: "cancelled",
-        cancelled_at: Time.current,
+        cancelled_at: subscription.cancelled_at || Time.current,
         shopify_payload: subscription_payload
       )
 

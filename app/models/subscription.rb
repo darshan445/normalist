@@ -26,6 +26,9 @@ class Subscription < ApplicationRecord
   scope :cancelled, -> { where(status: "cancelled") }
   scope :frozen, -> { where(status: "frozen") }
   scope :for_merchant, ->(id) { where(merchant_id: id) }
+  scope :cancellation_pending, -> {
+    active.where.not(cancelled_at: nil)
+  }
 
   def active?
     status == "active"
@@ -47,8 +50,30 @@ class Subscription < ApplicationRecord
     status == "frozen"
   end
 
+  def cancellation_pending?
+    active? && cancelled_at.present? && within_paid_period?
+  end
+
+  def access_ends_at
+    billing_on
+  end
+
+  def within_paid_period?
+    return true if cancelled_at.blank?
+
+    billing_on.present? && billing_on.end_of_day >= Time.current
+  end
+
+  def expire_if_period_ended!
+    return unless active?
+    return if cancelled_at.blank?
+    return if within_paid_period?
+
+    update!(status: "cancelled")
+  end
+
   def has_access?
-    active? || trialing?
+    active? && within_paid_period?
   end
 
   def trial_days_remaining

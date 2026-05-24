@@ -1,5 +1,8 @@
-import Pricing from "../../../components/pricing";
+import { redirect } from "next/navigation";
 
-export default function PricingPage() {
-  return <Pricing />;
+export default async function PricingRedirectPage({ searchParams }) {
+  const params = await searchParams;
+  const qs = new URLSearchParams(params).toString();
+
+  redirect(qs ? `/subscription?${qs}` : "/subscription");
 }

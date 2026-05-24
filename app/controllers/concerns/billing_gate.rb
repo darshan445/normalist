@@ -48,7 +48,7 @@ module BillingGate
 
   def billing_url(merchant)
     shop = merchant.platform_domain
-    "#{frontend_base_url}/pricing?shop=#{CGI.escape(shop.to_s)}"
+    "#{frontend_base_url}/subscription?shop=#{CGI.escape(shop.to_s)}"
   end
 
   def frontend_base_url
