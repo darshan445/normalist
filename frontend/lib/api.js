@@ -93,6 +93,23 @@ export async function apiPost(path, { shop, sessionToken, body } = {}) {
   return parseApiResponse(response);
 }
 
+export async function apiDelete(path, { shop, sessionToken } = {}) {
+  if (!canAuthenticate({ shop, sessionToken })) {
+    return { ok: false, status: 0, data: null };
+  }
+
+  const url = buildApiUrl(path, { shop });
+  const headers = buildAuthHeaders({ sessionToken });
+
+  const response = await fetchWithTimeout(url.toString(), {
+    method: "DELETE",
+    headers,
+    cache: "no-store",
+  });
+
+  return parseApiResponse(response);
+}
+
 export async function verifyShopifySession({ shop, sessionToken }) {
   return apiGet("/api/v1/session", { shop, sessionToken });
 }
@@ -107,6 +124,10 @@ export async function fetchTrialStatus({ shop, sessionToken }) {
 
 export async function createBillingCharge({ shop, sessionToken } = {}) {
   return apiPost("/api/v1/billing", { shop, sessionToken });
+}
+
+export async function cancelBillingSubscription({ shop, sessionToken } = {}) {
+  return apiDelete("/api/v1/billing", { shop, sessionToken });
 }
 
 export async function fetchCatalog(path = "/api/v1/catalog", { shop, sessionToken } = {}) {

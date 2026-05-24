@@ -14,8 +14,7 @@ class Merchant < ApplicationRecord
   has_many :plan_changes
 
   has_one :active_subscription, -> {
-    where(status: "active")
-      .order(created_at: :desc)
+    active.order(created_at: :desc)
   }, class_name: "Subscription"
 
   validates :name, presence: true
@@ -25,16 +24,25 @@ class Merchant < ApplicationRecord
   validates :plan_status, inclusion: { in: PLAN_STATUSES }
 
   def current_plan
-    return active_subscription.plan if subscribed? && active_subscription&.plan
+    sub = access_subscription
+    return sub.plan if sub
 
     Plan.active.find_by(key: "starter") if trialing?
   end
 
   def has_access?
-    return true if plan_status == "active"
     return true if trialing?
 
-    false
+    access_subscription.present?
+  end
+
+  def access_subscription
+    expire_cancelled_subscriptions!
+    active_subscription&.has_access? ? active_subscription : nil
+  end
+
+  def expire_cancelled_subscriptions!
+    active_subscription&.expire_if_period_ended!
   end
 
   def trialing?
@@ -58,7 +66,25 @@ class Merchant < ApplicationRecord
   end
 
   def subscribed?
-    plan_status == "active"
+    renewing?
+  end
+
+  def renewing?
+    access_subscription.present? && !cancellation_pending?
+  end
+
+  def cancellation_pending?
+    sub = active_subscription
+    sub&.cancellation_pending? || false
+  end
+
+  def can_cancel_subscription?
+    sub = active_subscription
+    sub.present? && sub.cancelled_at.blank?
+  end
+
+  def access_ends_at
+    access_subscription&.access_ends_at
   end
 
   def frozen?
@@ -66,7 +92,7 @@ class Merchant < ApplicationRecord
   end
 
   def cancelled?
-    plan_status == "cancelled"
+    plan_status == "cancelled" && !cancellation_pending?
   end
 
   def on_plan?(plan_key)

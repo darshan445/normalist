@@ -7,7 +7,7 @@ module Api
 
       def trial_status
         merchant = current_merchant
-        sub = merchant.active_subscription
+        sub = merchant.access_subscription
 
         render json: {
           plan_status: merchant.plan_status,
@@ -17,7 +17,11 @@ module Api
           trial_ending_soon: merchant.trial_ending_soon?,
           trial_days_remaining: merchant.trial_days_remaining,
           trial_ends_at: merchant.trial_ends_at,
-          subscribed: merchant.subscribed?,
+          subscribed: sub.present?,
+          renewing: merchant.renewing?,
+          cancellation_pending: merchant.cancellation_pending?,
+          access_until: sub&.access_ends_at,
+          can_cancel: merchant.can_cancel_subscription?,
           billing_on: sub&.billing_on,
           price: sub&.price
         }

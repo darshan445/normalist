@@ -11,6 +11,11 @@
     class: ExpireTrialsJob
     queue: default
     description: "Check for expired trials daily"
+  expire_cancelled_subscriptions:
+    cron: "0 1 * * *"
+    class: ExpireCancelledSubscriptionsJob
+    queue: default
+    description: "Expire cancelled subscriptions after paid period ends"
   daily_catalog_sync:
     cron: "0 2 * * *"
     class: DailyCatalogSyncJob

@@ -50,6 +50,6 @@ class BillingController < ApplicationController
     shop = current_merchant.platform_domain
     params = { shop: shop }
     params[:billing_error] = error if error.present?
-    "#{url}/pricing?#{params.to_query}"
+    "#{url}/subscription?#{params.to_query}"
   end
 end

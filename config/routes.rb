@@ -31,6 +31,7 @@ Rails.application.routes.draw do
       get "merchants/catalog_sync_status", to: "merchants#catalog_sync_status"
       get "merchants/trial_status", to: "merchants#trial_status"
       post "billing", to: "billing#create"
+      delete "billing", to: "billing#destroy"
       resources :suppliers, only: %i[index show create] do
         resources :mappings, only: :index, module: :suppliers
         resources :uploads, only: :show, module: :suppliers do
