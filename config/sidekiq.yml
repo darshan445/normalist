@@ -6,6 +6,11 @@
   - shopify_sync
 
 :schedule:
+  expire_trials:
+    cron: "0 0 * * *"
+    class: ExpireTrialsJob
+    queue: default
+    description: "Check for expired trials daily"
   daily_catalog_sync:
     cron: "0 2 * * *"
     class: DailyCatalogSyncJob

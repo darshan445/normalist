@@ -5,6 +5,9 @@ Rails.application.routes.draw do
 
   get "up" => "rails/health#show", as: :rails_health_check
 
+  get "/billing", to: "billing#show", as: :billing
+  get "/billing/callback", to: "billing#callback", as: :billing_callback
+
   post "/webhooks/products/create", to: "webhooks#product_create"
   post "/webhooks/products/update", to: "webhooks#product_update"
   post "/webhooks/products/delete", to: "webhooks#product_delete"
@@ -12,6 +15,7 @@ Rails.application.routes.draw do
   post "/webhooks/inventory_items/update", to: "webhooks#inventory_item_update"
   post "/webhooks/inventory_levels/connect", to: "webhooks#inventory_level_connect"
   post "/webhooks/inventory_levels/update", to: "webhooks#inventory_level_update"
+  post "/webhooks/app/subscriptions/update", to: "webhooks#app_subscriptions_update"
 
   namespace :api do
     namespace :v1 do
@@ -25,6 +29,8 @@ Rails.application.routes.draw do
       post "review_queue/:mapping_id/reject", to: "review_decisions#reject"
       post "review_queue/:mapping_id/manual_match", to: "review_decisions#manual_match"
       get "merchants/catalog_sync_status", to: "merchants#catalog_sync_status"
+      get "merchants/trial_status", to: "merchants#trial_status"
+      post "billing", to: "billing#create"
       resources :suppliers, only: %i[index show create] do
         resources :mappings, only: :index, module: :suppliers
         resources :uploads, only: :show, module: :suppliers do

@@ -6,6 +6,7 @@ import { Spinner, Page, Card, BlockStack } from "@shopify/polaris";
 import RequireShopifyAuth from "./require-shopify-auth";
 import AppShell from "./app-shell";
 import { SessionProvider } from "../lib/session-context";
+import { TrialStatusProvider } from "../lib/trial-status-context";
 import { pickShopifyParams } from "../lib/shopify-search-params";
 
 function AuthenticatedAppInner({ children }) {
@@ -16,7 +17,9 @@ function AuthenticatedAppInner({ children }) {
     <RequireShopifyAuth shop={shop} host={host} embedded={embedded}>
       {({ session }) => (
         <SessionProvider session={session}>
-          <AppShell>{children}</AppShell>
+          <TrialStatusProvider>
+            <AppShell>{children}</AppShell>
+          </TrialStatusProvider>
         </SessionProvider>
       )}
     </RequireShopifyAuth>

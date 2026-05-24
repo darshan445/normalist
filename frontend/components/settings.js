@@ -8,6 +8,7 @@ import {
   Badge,
 } from "@shopify/polaris";
 import { useAppSession } from "../lib/session-context";
+import SubscriptionSection from "./subscription-section";
 
 export default function Settings() {
   const session = useAppSession();
@@ -20,6 +21,8 @@ export default function Settings() {
       <Text as="h1" variant="headingLg">
         Settings
       </Text>
+
+      <SubscriptionSection />
 
       <BlockStack gap="300">
         <Text as="h2" variant="headingMd">

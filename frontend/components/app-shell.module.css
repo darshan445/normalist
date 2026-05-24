@@ -29,6 +29,17 @@
   margin: 0.125rem 0;
 }
 
+.navLinkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.navBadge {
+  line-height: 1;
+  font-size: 0.75rem;
+}
+
 .navLink {
   display: block;
   padding: 0.5rem 0.75rem;

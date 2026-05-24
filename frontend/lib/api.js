@@ -101,6 +101,14 @@ export async function fetchDashboard({ shop, sessionToken }) {
   return apiGet("/api/v1/dashboard", { shop, sessionToken });
 }
 
+export async function fetchTrialStatus({ shop, sessionToken }) {
+  return apiGet("/api/v1/merchants/trial_status", { shop, sessionToken });
+}
+
+export async function createBillingCharge({ shop, sessionToken } = {}) {
+  return apiPost("/api/v1/billing", { shop, sessionToken });
+}
+
 export async function fetchCatalog(path = "/api/v1/catalog", { shop, sessionToken } = {}) {
   return apiGet(path, { shop, sessionToken });
 }

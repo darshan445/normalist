@@ -9,11 +9,25 @@ class CatalogSyncJob < ApplicationJob
     return unless merchant
     return if merchant.access_token.blank?
 
-    session = ShopifyAPI::Auth::Session.new(
-      shop: merchant.platform_domain,
-      access_token: merchant.access_token
+    merchant.with_shopify_session do |session|
+      sync_catalog(merchant, session)
+    end
+  rescue ShopifyApp::RefreshTokenExpiredError => e
+    Rails.logger.error(
+      "[CatalogSyncJob] refresh token expired merchant=#{merchant_id} " \
+      "error=#{e.message}"
     )
+    raise
+  rescue StandardError => e
+    Rails.logger.error(
+      "[CatalogSyncJob] failed merchant=#{merchant_id} error=#{e.message}"
+    )
+    raise
+  end
 
+  private
+
+  def sync_catalog(merchant, session)
     ShopifyAPI::Context.activate_session(session)
 
     upsert_data = []
@@ -68,21 +82,13 @@ class CatalogSyncJob < ApplicationJob
     no_sku_count = upsert_data.count { |v| v[:needs_sku] }
 
     Rails.logger.info(
-      "[CatalogSyncJob] merchant=#{merchant_id} " \
+      "[CatalogSyncJob] merchant=#{merchant.id} " \
       "upserted=#{upsert_data.size} " \
       "no_sku=#{no_sku_count}"
     )
-  rescue StandardError => e
-    Rails.logger.error(
-      "[CatalogSyncJob] failed merchant=#{merchant_id} " \
-      "error=#{e.message}"
-    )
-    raise
   ensure
     ShopifyAPI::Context.deactivate_session
   end
-
-  private
 
   def fetch_and_save_location(merchant, session)
     locations = ShopifyAPI::Location.all(session: session)

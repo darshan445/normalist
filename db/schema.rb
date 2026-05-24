@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_24_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -89,12 +89,93 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
     t.string "access_token"
     t.datetime "catalog_synced_at"
     t.datetime "created_at", null: false
+    t.datetime "expires_at"
     t.string "location_id"
     t.string "name", null: false
+    t.string "plan_status", default: "trialing", null: false
     t.string "platform"
     t.string "platform_domain"
+    t.string "refresh_token"
+    t.datetime "refresh_token_expires_at"
+    t.datetime "trial_ends_at"
+    t.datetime "trial_starts_at"
     t.datetime "updated_at", null: false
     t.index ["platform_domain"], name: "index_merchants_on_platform_domain", unique: true, where: "(platform_domain IS NOT NULL)"
+    t.index ["trial_ends_at"], name: "index_merchants_on_trial_ends_at"
+  end
+
+  create_table "plan_changes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "from_plan"
+    t.string "initiated_by", default: "merchant", null: false
+    t.uuid "merchant_id", null: false
+    t.text "note"
+    t.string "reason", null: false
+    t.uuid "subscription_id"
+    t.string "to_plan", null: false
+    t.datetime "updated_at", null: false
+    t.index ["initiated_by"], name: "index_plan_changes_on_initiated_by"
+    t.index ["merchant_id", "created_at"], name: "index_plan_changes_on_merchant_id_and_created_at"
+    t.index ["merchant_id"], name: "index_plan_changes_on_merchant_id"
+    t.index ["reason"], name: "index_plan_changes_on_reason"
+    t.index ["subscription_id"], name: "index_plan_changes_on_subscription_id"
+    t.index ["to_plan"], name: "index_plan_changes_on_to_plan"
+  end
+
+  create_table "plan_features", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "feature_key", null: false
+    t.string "limit_type"
+    t.integer "limit_value"
+    t.uuid "plan_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["enabled"], name: "index_plan_features_on_enabled"
+    t.index ["feature_key"], name: "index_plan_features_on_feature_key"
+    t.index ["plan_id", "feature_key"], name: "index_plan_features_on_plan_id_and_feature_key", unique: true
+    t.index ["plan_id"], name: "index_plan_features_on_plan_id"
+  end
+
+  create_table "plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "interval", default: "monthly", null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.boolean "public", default: true, null: false
+    t.integer "sort_order", default: 0, null: false
+    t.integer "trial_days", default: 14, null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_plans_on_active"
+    t.index ["key"], name: "index_plans_on_key", unique: true
+    t.index ["public"], name: "index_plans_on_public"
+    t.index ["sort_order"], name: "index_plans_on_sort_order"
+  end
+
+  create_table "subscriptions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "activated_at"
+    t.datetime "billing_on"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "frozen_at"
+    t.string "interval", default: "monthly", null: false
+    t.uuid "merchant_id", null: false
+    t.uuid "plan_id", null: false
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.string "shopify_charge_id", null: false
+    t.jsonb "shopify_payload", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "trial_days", default: 14
+    t.datetime "trial_ends_at"
+    t.datetime "updated_at", null: false
+    t.index ["activated_at"], name: "index_subscriptions_on_activated_at"
+    t.index ["billing_on"], name: "index_subscriptions_on_billing_on"
+    t.index ["merchant_id", "status"], name: "index_subscriptions_on_merchant_id_and_status"
+    t.index ["merchant_id"], name: "index_subscriptions_on_merchant_id"
+    t.index ["plan_id"], name: "index_subscriptions_on_plan_id"
+    t.index ["shopify_charge_id"], name: "index_subscriptions_on_shopify_charge_id", unique: true
+    t.index ["status"], name: "index_subscriptions_on_status"
   end
 
   create_table "supplier_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -173,6 +254,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
   add_foreign_key "mapping_dictionaries", "merchants"
   add_foreign_key "mapping_dictionaries", "supplier_uploads"
   add_foreign_key "mapping_dictionaries", "suppliers"
+  add_foreign_key "plan_changes", "merchants"
+  add_foreign_key "plan_changes", "subscriptions"
+  add_foreign_key "plan_features", "plans"
+  add_foreign_key "subscriptions", "merchants"
+  add_foreign_key "subscriptions", "plans"
   add_foreign_key "supplier_profiles", "merchants"
   add_foreign_key "supplier_profiles", "suppliers"
   add_foreign_key "supplier_uploads", "feeds"
