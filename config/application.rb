@@ -27,6 +27,8 @@ module Normalist
     config.eager_load_paths << Rails.root.join("app/services")
     config.autoload_paths << Rails.root.join("app/handlers")
     config.eager_load_paths << Rails.root.join("app/handlers")
+    config.hosts << "reemerge-obstinate-latter.ngrok-free.dev"
+
 
     config.active_job.queue_adapter = :sidekiq
 

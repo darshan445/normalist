@@ -130,6 +130,25 @@ export async function cancelBillingSubscription({ shop, sessionToken } = {}) {
   return apiDelete("/api/v1/billing", { shop, sessionToken });
 }
 
+export async function fetchGoogleSheetTabs(url, { shop, sessionToken } = {}) {
+  return apiPost("/api/v1/google_sheets/tabs", {
+    shop,
+    sessionToken,
+    body: { url },
+  });
+}
+
+export async function previewGoogleSheet(
+  { url, tab_gid, supplier_id },
+  { shop, sessionToken } = {}
+) {
+  return apiPost("/api/v1/google_sheets/preview", {
+    shop,
+    sessionToken,
+    body: { url, tab_gid, supplier_id },
+  });
+}
+
 export async function fetchCatalog(path = "/api/v1/catalog", { shop, sessionToken } = {}) {
   return apiGet(path, { shop, sessionToken });
 }
@@ -307,6 +326,14 @@ export async function fetchFeedUploads(supplierId, feedId, { shop, sessionToken 
     shop,
     sessionToken,
   });
+}
+
+export async function triggerFeedSync(feedId, { shop, sessionToken }) {
+  return apiPost(`/api/v1/feeds/${feedId}/sync`, { shop, sessionToken });
+}
+
+export async function fetchFeedSyncs(feedId, { shop, sessionToken }) {
+  return apiGet(`/api/v1/feeds/${feedId}/syncs`, { shop, sessionToken });
 }
 
 export async function apiPatch(path, { shop, sessionToken, body } = {}) {

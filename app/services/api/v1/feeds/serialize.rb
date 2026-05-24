@@ -20,6 +20,9 @@ module Api
             feed_type: feed.feed_type,
             status: feed.status,
             url: feed.google_sheets? ? feed.config["url"] : nil,
+            tab_gid: feed.google_sheets? ? feed.config["tab_gid"] : nil,
+            tab_name: feed.google_sheets? ? feed.config["tab_name"] : nil,
+            interval: feed.google_sheets? ? feed.sync_interval : nil,
             last_upload_at: latest_upload&.created_at&.iso8601,
             upload_enabled: feed.file_upload?,
             latest_upload: latest_upload_payload

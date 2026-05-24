@@ -21,6 +21,11 @@
     class: DailyCatalogSyncJob
     queue: default
     description: "Re-sync all merchant catalogs from Shopify"
+  scheduled_google_sheets_sync:
+    cron: "30 * * * *"
+    class: ScheduledGoogleSheetsSyncJob
+    queue: default
+    description: "Sync Google Sheets feeds on their configured interval"
 
 :redis:
   url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6379/0") %>

@@ -32,6 +32,14 @@ Rails.application.routes.draw do
       get "merchants/trial_status", to: "merchants#trial_status"
       post "billing", to: "billing#create"
       delete "billing", to: "billing#destroy"
+      post "google_sheets/tabs", to: "google_sheets#tabs"
+      post "google_sheets/preview", to: "google_sheets#preview"
+      resources :feeds, only: [] do
+        member do
+          post :sync
+          get :syncs
+        end
+      end
       resources :suppliers, only: %i[index show create] do
         resources :mappings, only: :index, module: :suppliers
         resources :uploads, only: :show, module: :suppliers do

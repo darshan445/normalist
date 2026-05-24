@@ -29,6 +29,7 @@ class SupplierSchemaDiscoveryJob < ApplicationJob
       stage: "failed",
       error_message: e.message
     )
+    touch_feed_last_synced!(upload) if upload
     Rails.logger.error(
       "[SupplierSchemaDiscoveryJob] Failed for upload #{supplier_upload_id}: #{e.class} — #{e.message}"
     )
@@ -68,8 +69,11 @@ class SupplierSchemaDiscoveryJob < ApplicationJob
       unresolved_count: unresolved_count,
       output: output
     )
+
+    touch_feed_last_synced!(upload)
   rescue StandardError => e
     upload.update!(status: "failed", stage: "failed", error_message: e.message)
+    touch_feed_last_synced!(upload)
     raise
   end
 
@@ -79,5 +83,13 @@ class SupplierSchemaDiscoveryJob < ApplicationJob
       stage: "failed",
       error_message: result.error_message
     )
+    touch_feed_last_synced!(upload)
+  end
+
+  def touch_feed_last_synced!(upload)
+    feed = upload.feed
+    return unless feed&.google_sheets?
+
+    feed.update!(last_synced_at: Time.current)
   end
 end
