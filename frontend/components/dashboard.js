@@ -20,6 +20,7 @@ import { fetchDashboard } from "../lib/api";
 import { fetchSessionToken } from "../lib/shopify-session-token";
 import { formatRelativeTime } from "../lib/format-relative-time";
 import { ActivityOutcomeCell } from "./review-needed-link";
+import TrialBanner from "./trial-banner";
 import styles from "./app-shell.module.css";
 
 function RecentActivityEmpty({ suppliersCount, suppliersHref }) {
@@ -161,6 +162,8 @@ export default function Dashboard() {
 
   return (
     <BlockStack gap="500">
+      <TrialBanner />
+
       {loadState.status === "error" ? (
         <Banner tone="critical" title="Could not load dashboard">
           <p>{loadState.error}</p>

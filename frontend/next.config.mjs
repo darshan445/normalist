@@ -11,6 +11,8 @@ const nextConfig = {
       { source: "/login", destination: `${apiBackend}/login` },
       { source: "/login/:path*", destination: `${apiBackend}/login/:path*` },
       { source: "/auth/:path*", destination: `${apiBackend}/auth/:path*` },
+      { source: "/billing", destination: `${apiBackend}/billing` },
+      { source: "/billing/callback", destination: `${apiBackend}/billing/callback` },
       { source: "/webhooks/:path*", destination: `${apiBackend}/webhooks/:path*` },
     ];
   },

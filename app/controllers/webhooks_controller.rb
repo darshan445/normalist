@@ -47,6 +47,18 @@ class WebhooksController < ApplicationController
     head :ok
   end
 
+  def app_subscriptions_update
+    merchant = find_merchant
+    return head :ok unless merchant
+
+    Billing::WebhookHandler.call(
+      merchant: merchant,
+      payload: @webhook_body
+    )
+
+    head :ok
+  end
+
   def self.sync_product_from_webhook(shop_domain:, product:)
     merchant = Merchant.find_by(platform_domain: shop_domain)
     return unless merchant

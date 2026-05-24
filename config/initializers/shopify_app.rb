@@ -25,6 +25,7 @@ ShopifyApp.configure do |config|
   config.shop_session_repository = "Merchant"
   config.log_level = :info
   config.reauth_on_access_scope_changes = true
+  config.check_session_expiry_date = true
   config.webhooks = [
     { topic: "app/uninstalled", address: "webhooks/app_uninstalled" },
     { topic: "customers/data_request", address: "webhooks/customers_data_request" },
@@ -36,9 +37,9 @@ ShopifyApp.configure do |config|
     { topic: "inventory_items/create", address: "webhooks/inventory_items/create" },
     { topic: "inventory_items/update", address: "webhooks/inventory_items/update" },
     { topic: "inventory_levels/connect", address: "webhooks/inventory_levels/connect" },
-    { topic: "inventory_levels/update", address: "webhooks/inventory_levels/update" }
+    { topic: "inventory_levels/update", address: "webhooks/inventory_levels/update" },
+    { topic: "app/subscriptions/update", address: "webhooks/app/subscriptions/update" }
   ]
-
   config.api_key = ENV.fetch("SHOPIFY_CLIENT_ID")
   config.secret = ENV.fetch("SHOPIFY_CLIENT_SECRET")
 end
@@ -52,6 +53,7 @@ Rails.application.config.after_initialize do
     scope: ShopifyApp.configuration.scope,
     is_private: !ENV.fetch("SHOPIFY_APP_PRIVATE_SHOP", "").empty?,
     is_embedded: ShopifyApp.configuration.embedded_app,
+    expiring_offline_access_tokens: true,
     log_level: :info,
     logger: Rails.logger,
     private_shop: ENV.fetch("SHOPIFY_APP_PRIVATE_SHOP", nil),
@@ -88,6 +90,10 @@ def register_shopify_webhook_handlers!
     "inventory_levels/update" => [
       "webhooks/inventory_levels/update",
       WebhooksController::InventoryLevelsUpdateHandler.new
+    ],
+    "app/subscriptions/update" => [
+      "webhooks/app/subscriptions/update",
+      Billing::AppSubscriptionsUpdateHandler.new
     ]
   }
 
