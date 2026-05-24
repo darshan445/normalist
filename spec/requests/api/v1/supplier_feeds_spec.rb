@@ -7,14 +7,17 @@ RSpec.describe "Api::V1::Suppliers::Feeds", type: :request do
     create(
       :merchant,
       platform: "shopify",
-      platform_domain: "test-store.myshopify.com",
-      access_token: "shpat_test"
+      platform_domain: "test-store-#{SecureRandom.hex(4)}.myshopify.com",
+      access_token: "shpat_test",
+      plan_status: "trialing",
+      trial_ends_at: 7.days.from_now
     )
   end
   let(:supplier) { create(:supplier, merchant:) }
 
   before do
     allow(Rails.env).to receive(:development?).and_return(true)
+    allow(Rails.env).to receive(:test?).and_return(true)
   end
 
   describe "POST /api/v1/suppliers/:supplier_id/feeds" do
@@ -53,19 +56,32 @@ RSpec.describe "Api::V1::Suppliers::Feeds", type: :request do
         merchant:,
         supplier:,
         feed_type: "google_sheets",
-        config: { "url" => "https://docs.google.com/spreadsheets/d/old" }
+        config: {
+          "url" => "https://docs.google.com/spreadsheets/d/old/edit",
+          "tab_gid" => "111",
+          "tab_name" => "Old tab"
+        }
       )
+
+      allow(Schema::GoogleSheetsDiscovery).to receive(:call)
 
       patch "/api/v1/suppliers/#{supplier.id}/feeds/#{feed.id}",
         params: {
           shop: merchant.platform_domain,
-          feed: { url: "https://docs.google.com/spreadsheets/d/new" }
+          feed: {
+            url: "https://docs.google.com/spreadsheets/d/new/edit",
+            tab_gid: "222",
+            tab_name: "New tab"
+          }
         }
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["feed"]["url"]).to eq(
-        "https://docs.google.com/spreadsheets/d/new"
+      expect(response.parsed_body["feed"]).to include(
+        "url" => "https://docs.google.com/spreadsheets/d/new/edit",
+        "tab_gid" => "222",
+        "tab_name" => "New tab"
       )
+      expect(Schema::GoogleSheetsDiscovery).to have_received(:call).once
     end
 
     it "rejects file upload feed without a file" do
@@ -75,20 +91,40 @@ RSpec.describe "Api::V1::Suppliers::Feeds", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
-    it "creates a google sheets feed with a url" do
+    it "creates a google sheets feed with a url and tab" do
+      allow(Schema::GoogleSheetsDiscovery).to receive(:call)
+
       post "/api/v1/suppliers/#{supplier.id}/feeds",
         params: {
           shop: merchant.platform_domain,
           feed: {
             feed_type: "google_sheets",
-            url: "https://docs.google.com/spreadsheets/d/abc123"
+            url: "https://docs.google.com/spreadsheets/d/abc123/edit",
+            tab_gid: "1005365070",
+            tab_name: "Stock"
           }
         }
 
       expect(response).to have_http_status(:created)
-      expect(response.parsed_body["feed"]["url"]).to eq(
-        "https://docs.google.com/spreadsheets/d/abc123"
+      expect(response.parsed_body["feed"]).to include(
+        "url" => "https://docs.google.com/spreadsheets/d/abc123/edit",
+        "tab_gid" => "1005365070",
+        "tab_name" => "Stock"
       )
+      expect(Schema::GoogleSheetsDiscovery).to have_received(:call).once
+    end
+
+    it "rejects google sheets without a tab" do
+      post "/api/v1/suppliers/#{supplier.id}/feeds",
+        params: {
+          shop: merchant.platform_domain,
+          feed: {
+            feed_type: "google_sheets",
+            url: "https://docs.google.com/spreadsheets/d/abc123/edit"
+          }
+        }
+
+      expect(response).to have_http_status(:unprocessable_entity)
     end
 
     it "rejects duplicate feed type for the same supplier" do

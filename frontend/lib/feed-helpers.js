@@ -1,3 +1,17 @@
+export const SYNC_INTERVAL_OPTIONS = [
+  { value: "every_6_hours", label: "Every 6 hours" },
+  { value: "every_12_hours", label: "Every 12 hours" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+];
+
+export const DEFAULT_SYNC_INTERVAL = "daily";
+
+export function syncIntervalLabel(interval) {
+  const match = SYNC_INTERVAL_OPTIONS.find((option) => option.value === interval);
+  return match?.label ?? "Daily";
+}
+
 export const FEED_TYPE_CHOICES = [
   {
     label: "File Upload",
