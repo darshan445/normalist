@@ -19,7 +19,7 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
   config.assets.compile = false
   config.public_file_server.enabled = true
-  config.hosts << "normalist.app"
+  config.hosts << "api.normalist.space"
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
   config.host_authorization = {
