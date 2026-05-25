@@ -3,8 +3,12 @@ import ShopifyScripts from "../components/shopify-scripts";
 import "./globals.css";
 
 export const metadata = {
-  title: "NormaList",
-  description: "Supplier inventory normalization for Shopify merchants",
+  title: {
+    default: "NormaList",
+    template: "%s | NormaList",
+  },
+  description:
+    "AI-powered supplier inventory sync for Shopify. Map supplier codes once, sync automatically forever.",
 };
 
 export default function RootLayout({ children }) {

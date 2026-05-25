@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 html,
 body {
   height: 100%;
@@ -5,5 +7,5 @@ body {
 }
 
 body {
-  background: var(--p-color-bg);
+  background: var(--p-color-bg, #f6f6f7);
 }

@@ -34,6 +34,7 @@ module Normalist
     # config.hosts << "reemerge-obstinate-latter.ngrok-free.dev"
 
 
+
     config.active_job.queue_adapter = :sidekiq
     config.active_job.enqueue_after_transaction_commit = :always
 
