@@ -23,8 +23,21 @@ class SecurePageKeyAuth
     end
 
     status, headers, body = @app.call(env)
-    headers = Rack::Utils.merge_set_cookie(headers, auth_cookie(expected)) unless cookie_valid?(request, expected)
-    [ status, headers, body ]
+
+    unless cookie_valid?(request, expected)
+      response = Rack::Response.new(body, status, headers)
+      response.set_cookie(
+        @cookie_name,
+        value: auth_token(expected),
+        path: "/sidekiq",
+        httponly: true,
+        same_site: :lax,
+        secure: Rails.env.production?
+      )
+      response.finish
+    else
+      [ status, headers, body ]
+    end
   end
 
   private
@@ -54,18 +67,6 @@ class SecurePageKeyAuth
       ::Digest::SHA256.hexdigest(provided),
       ::Digest::SHA256.hexdigest(expected)
     )
-  end
-
-  def auth_cookie(expected)
-    {
-      @cookie_name => {
-        value: auth_token(expected),
-        path: "/sidekiq",
-        httponly: true,
-        same_site: :lax,
-        secure: Rails.env.production?
-      }
-    }
   end
 
   def unauthorized
