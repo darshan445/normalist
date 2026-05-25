@@ -29,7 +29,7 @@ export default function PublicHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-slate-600 transition hover:text-emerald-700"
+              className="text-base font-medium text-slate-600 transition hover:text-emerald-700"
             >
               {item.label}
             </Link>
@@ -40,7 +40,7 @@ export default function PublicHeader() {
           {installUrl ? (
             <a
               href={installUrl}
-              className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
               Add to Shopify
             </a>

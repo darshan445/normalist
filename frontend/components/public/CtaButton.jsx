@@ -14,7 +14,7 @@ export default function CtaButton({ className = "", children = "Start Free Trial
   return (
     <a
       href={installUrl}
-      className={`inline-flex items-center justify-center rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-700 ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-emerald-700 ${className}`}
     >
       {children}
     </a>

@@ -6,6 +6,32 @@ body {
   margin: 0;
 }
 
+html {
+  font-size: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Marketing pages — readable base size (Polaris is not loaded on public routes). */
 body {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+/* Embedded app — Polaris sets its own typography when Providers mount. */
+body:has(.Polaris-ThemeProvider) {
+  font-size: var(--p-font-size-325);
+  line-height: var(--p-font-line-height-500);
   background: var(--p-color-bg, #f6f6f7);
+  color: inherit;
 }

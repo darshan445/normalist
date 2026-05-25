@@ -81,7 +81,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <CtaButton />
-              <p className="text-sm text-slate-500">No credit card required.</p>
+              <p className="text-base text-slate-500">No credit card required.</p>
             </div>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default function HomePage() {
                   {index + 1}
                 </span>
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{step.body}</p>
+                <p className="mt-2 text-base leading-relaxed text-slate-600">{step.body}</p>
               </li>
             ))}
           </ol>
@@ -135,7 +135,7 @@ export default function HomePage() {
                 className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
               >
                 <h3 className="font-semibold text-slate-900">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{feature.body}</p>
+                <p className="mt-2 text-base leading-relaxed text-slate-600">{feature.body}</p>
               </li>
             ))}
           </ul>
@@ -151,7 +151,7 @@ export default function HomePage() {
               <span className="text-lg font-medium text-slate-500"> / month</span>
             </p>
             <p className="mt-2 font-medium text-emerald-700">Everything included</p>
-            <ul className="mt-8 space-y-2 text-left text-sm text-slate-600">
+            <ul className="mt-8 space-y-2 text-left text-base text-slate-600">
               <li>Unlimited suppliers</li>
               <li>Unlimited variants</li>
               <li>Unlimited uploads</li>

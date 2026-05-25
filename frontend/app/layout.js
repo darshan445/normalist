@@ -1,4 +1,3 @@
-import Providers from "./providers";
 import ShopifyScripts from "../components/shopify-scripts";
 import "./globals.css";
 
@@ -18,9 +17,7 @@ export default function RootLayout({ children }) {
         {/* App Bridge: meta + script must be first in <head> (no next/script async). */}
         <ShopifyScripts />
       </head>
-      <body>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
