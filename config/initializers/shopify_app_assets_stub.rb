@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-# shopify_app engine registers asset precompile paths; API-only apps have no asset pipeline.
-Rails.application.config.assets = ActiveSupport::OrderedOptions.new
-Rails.application.config.assets.precompile = []
+# shopify_app references the asset pipeline for OAuth views. Extend precompile paths
+# without replacing the Sprockets configuration used by RailsAdmin.
+Rails.application.config.assets.precompile ||= []

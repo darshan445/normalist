@@ -3,9 +3,10 @@
 class SecurePageKeyAuth
   COOKIE_NAME = "secure_page_auth"
 
-  def initialize(app, cookie_name: COOKIE_NAME)
+  def initialize(app, cookie_name: COOKIE_NAME, cookie_path: "/")
     @app = app
     @cookie_name = cookie_name
+    @cookie_path = cookie_path
   end
 
   def call(env)
@@ -29,7 +30,7 @@ class SecurePageKeyAuth
       response.set_cookie(
         @cookie_name,
         value: auth_token(expected),
-        path: "/sidekiq",
+        path: @cookie_path,
         httponly: true,
         same_site: :lax,
         secure: Rails.env.production?

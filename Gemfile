@@ -30,6 +30,11 @@ gem "thruster", require: false
 gem "aws-sdk-s3", require: false
 gem "image_processing", "~> 1.2"
 
+# Admin panel (RailsAdmin) + asset pipeline
+gem "rails_admin", "~> 3.3"
+gem "sprockets-rails", "~> 3.5"
+gem "sassc-rails", "~> 2.1"
+
 group :development, :test do
   gem "dotenv-rails"
   gem "rspec-rails"

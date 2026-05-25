@@ -22,6 +22,9 @@ module Normalist
 
     config.api_only = true
 
+    config.paths.add "public", with: "public"
+    config.public_file_server.enabled = true
+
     config.autoload_lib(ignore: %w[assets tasks])
     config.autoload_paths << Rails.root.join("app/services")
     config.eager_load_paths << Rails.root.join("app/services")
