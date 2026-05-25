@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "./BrandLogo";
 import { getPublicSiteConfig } from "../../lib/public-site";
 
 const FOOTER_LINKS = [
@@ -17,8 +18,8 @@ export default function PublicFooter() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-lg font-semibold text-slate-900">{appName}</p>
-            <p className="mt-2 text-sm text-slate-600">
+            <BrandLogo href="/" showName size="sm" />
+            <p className="mt-3 text-sm text-slate-600">
               AI-powered supplier inventory sync for Shopify.
             </p>
             <a

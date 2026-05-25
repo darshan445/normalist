@@ -19,6 +19,11 @@
   background: var(--p-color-bg-surface);
 }
 
+.brand {
+  padding: 0.25rem 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
 .navList {
   list-style: none;
   margin: 0;

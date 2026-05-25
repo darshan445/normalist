@@ -8,6 +8,10 @@ export const metadata = {
   },
   description:
     "AI-powered supplier inventory sync for Shopify. Map supplier codes once, sync automatically forever.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {
