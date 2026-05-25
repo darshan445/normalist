@@ -30,4 +30,12 @@ RSpec.describe Ingestion::FileParser do
     expect(rows.size).to eq(2)
     expect(rows.first["ItemCode_Ref"]).to eq("XYZ-9982")
   end
+
+  it "parses CSV from binary string content that contains null bytes" do
+    content = File.read(csv_path) + "\0"
+    rows = described_class.call(content, filename: "sample.csv")
+
+    expect(rows.size).to eq(2)
+    expect(rows.first["ItemCode_Ref"]).to eq("XYZ-9982")
+  end
 end

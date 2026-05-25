@@ -62,8 +62,7 @@ module Ingestion
       when nil
         nil
       when String
-        # ActiveStorage#download returns raw bytes; only treat as a path if it exists on disk.
-        if File.file?(@io_or_path)
+        if existing_file_path?(@io_or_path)
           File.binread(@io_or_path)
         else
           @io_or_path
@@ -78,6 +77,15 @@ module Ingestion
           raise ArgumentError, "Unsupported file input: #{@io_or_path.class.name}"
         end
       end
+    end
+
+    def existing_file_path?(value)
+      return false if value.blank?
+      return false if value.include?("\0")
+      return false if value.bytesize > 1024
+      return false if value.include?("\n") || value.include?("\r")
+
+      File.file?(value)
     end
 
     def extension_suffix
