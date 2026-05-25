@@ -4,6 +4,9 @@ Rails.application.routes.draw do
   Sidekiq::Web.use SecurePageKeyAuth
   mount Sidekiq::Web => "/sidekiq"
 
+  RailsAdmin::Engine.middleware.use SecurePageKeyAuth
+  mount RailsAdmin::Engine => "/admin", as: "rails_admin"
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   get "/billing", to: "billing#show", as: :billing

@@ -13,4 +13,5 @@ if Rails.application.config.api_only
     Rails.application.config.session_options
   )
   Rails.application.config.middleware.use ActionDispatch::Flash
+  Rails.application.config.middleware.use Rack::MethodOverride
 end

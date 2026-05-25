@@ -10,8 +10,8 @@ class Merchant < ApplicationRecord
   has_many :supplier_profiles, dependent: :destroy
   has_many :mapping_dictionaries, dependent: :destroy
   has_many :supplier_uploads, dependent: :destroy
-  has_many :subscriptions
-  has_many :plan_changes
+  has_many :plan_changes, dependent: :destroy
+  has_many :subscriptions, dependent: :destroy
 
   has_one :active_subscription, -> {
     active.order(created_at: :desc)
