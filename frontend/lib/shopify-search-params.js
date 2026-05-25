@@ -49,7 +49,8 @@ export function pickShopifyParams(searchParams) {
 }
 
 export function hasShopifyContext({ shop, host, embedded }) {
-  if (embedded && shop && host) return true;
+  // Embedded admin always sends shop + host; embedded=1 may be omitted after OAuth redirect.
+  if (shop && host) return true;
 
   if (process.env.NODE_ENV === "development" && shop) return true;
 

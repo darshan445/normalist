@@ -76,7 +76,23 @@ On first boot, `web` runs `db:prepare` (migrate/create DB).
 - Rails runs with `RAILS_ENV=production` and `force_ssl`. Terminate TLS at a reverse proxy (Caddy, nginx, Traefik) in front of port 3000.
 - Point `HOST` at the proxy’s public HTTPS URL (e.g. `https://api.normalist.space`).
 - Reinstall the Shopify app or re-auth after changing `HOST` so webhooks re-register.
-- Vercel frontend must set `NEXT_PUBLIC_API_URL=https://api.normalist.space` so OAuth opens on the API host (not `normalist.vercel.app/login`).
+- Vercel frontend (`https://normalist.app`) must set:
+  - `NEXT_PUBLIC_API_URL=https://api.normalist.space` — OAuth login opens on the API host
+  - `API_BACKEND_URL=https://api.normalist.space` — Next rewrites `/api/*` and `/login` to Rails
+  - `NEXT_PUBLIC_SHOPIFY_API_KEY` — same value as `SHOPIFY_CLIENT_ID` (App Bridge in embedded admin)
+- Rails (`.kamal/secrets`):
+  - `HOST=https://api.normalist.space` — OAuth callback + webhooks
+  - `FRONTEND_URL=https://normalist.app` — where Shopify sends merchants after install
+  - `CORS_ORIGINS=https://normalist.app` — browser API calls from the frontend origin
+
+### Shopify Partners app URLs
+
+| Setting | Value |
+|---------|--------|
+| App URL | `https://normalist.app/app` |
+| Allowed redirection URL(s) | `https://api.normalist.space/auth/shopify/callback` |
+
+The app UI and API are on different hosts by design: UI on `normalist.app`, OAuth/session on `api.normalist.space`.
 
 ## Postgres collation warning
 

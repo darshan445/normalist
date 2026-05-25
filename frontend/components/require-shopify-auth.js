@@ -26,9 +26,6 @@ export default function RequireShopifyAuth({ shop, host, embedded, children }) {
 
       try {
         const sessionToken = await fetchSessionToken();
-        if (sessionToken) {
-          sessionStorage.removeItem(REDIRECT_KEY);
-        }
         const result = await verifyShopifySession({ shop, sessionToken });
 
         if (cancelled) return;
@@ -58,6 +55,16 @@ export default function RequireShopifyAuth({ shop, host, embedded, children }) {
             session: null,
             error:
               "App install did not finish on the server. Open OAuth login once, approve the app, then reload from Shopify Admin.",
+          });
+          return;
+        }
+
+        if (!sessionToken) {
+          setState({
+            status: "denied",
+            session: null,
+            error:
+              "Could not obtain a Shopify session token. Open this app from Shopify Admin (not a bookmarked URL).",
           });
           return;
         }
