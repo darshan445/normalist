@@ -47,7 +47,19 @@ COPY . .
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 
-RUN SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile
+# Precompile assets for RailsAdmin (Sprockets). Real env vars are injected at deploy;
+# placeholders satisfy initializers during the build-only boot.
+RUN SECRET_KEY_BASE_DUMMY=1 \
+    FRONTEND_URL=https://build.invalid \
+    HOST=https://build.invalid \
+    CORS_ORIGINS=https://build.invalid \
+    SHOPIFY_CLIENT_ID=build \
+    SHOPIFY_CLIENT_SECRET=build \
+    CLOUDFLARE_R2_ACCESS_KEY_ID=build \
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY=build \
+    CLOUDFLARE_R2_ENDPOINT=https://build.invalid \
+    CLOUDFLARE_R2_BUCKET=build \
+    bundle exec rails assets:precompile
 
 # Final stage for app image
 FROM base
