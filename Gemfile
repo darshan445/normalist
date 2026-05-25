@@ -28,7 +28,7 @@ gem "thruster", require: false
 
 # Active Storage for supplier/catalog file uploads (Cloudflare R2 uses S3 API)
 gem "aws-sdk-s3", require: false
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.0"
 
 # Admin panel (RailsAdmin) + asset pipeline
 gem "rails_admin", "~> 3.3"
