@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import BrandLogo from "./public/BrandLogo";
 import { NAV_ITEMS } from "../lib/nav-items";
 import { pickShopifyParams } from "../lib/shopify-search-params";
 import { shopifyNavHref } from "../lib/shopify-nav-href";
@@ -41,13 +40,6 @@ export default function AppShell({ children }) {
     <div className={styles.shell}>
       <div className={styles.body}>
         <nav className={styles.sidebar} aria-label="Main navigation">
-          <div className={styles.brand}>
-            <BrandLogo
-              href={shopifyNavHref("/app", shopifyParams)}
-              showName
-              size="sm"
-            />
-          </div>
           <ul className={styles.navList}>
             {NAV_ITEMS.map((item) => {
               const href = shopifyNavHref(item.href, shopifyParams);
