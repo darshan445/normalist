@@ -3,6 +3,9 @@
 class SupplierSchemaDiscoveryJob < ApplicationJob
   queue_as :uploads
 
+  retry_on ActiveRecord::RecordNotFound, wait: 5.seconds, attempts: 5
+  retry_on ActiveStorage::FileNotFoundError, wait: 5.seconds, attempts: 5
+
   def perform(supplier_upload_id)
     upload = SupplierUpload.find(supplier_upload_id)
 
@@ -23,6 +26,9 @@ class SupplierSchemaDiscoveryJob < ApplicationJob
     run_fast_pass!(upload)
   rescue ActiveRecord::RecordNotFound
     Rails.logger.warn("[SupplierSchemaDiscoveryJob] Upload #{supplier_upload_id} not found")
+    raise
+  rescue ActiveStorage::FileNotFoundError
+    raise
   rescue StandardError => e
     upload&.update!(
       status: "failed",

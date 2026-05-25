@@ -23,6 +23,7 @@ module Normalist
     config.api_only = true
 
     config.paths.add "public", with: "public"
+
     config.public_file_server.enabled = true
 
     config.autoload_lib(ignore: %w[assets tasks])
@@ -30,10 +31,11 @@ module Normalist
     config.eager_load_paths << Rails.root.join("app/services")
     config.autoload_paths << Rails.root.join("app/handlers")
     config.eager_load_paths << Rails.root.join("app/handlers")
-    config.hosts << "reemerge-obstinate-latter.ngrok-free.dev"
+    # config.hosts << "reemerge-obstinate-latter.ngrok-free.dev"
 
 
     config.active_job.queue_adapter = :sidekiq
+    config.active_job.enqueue_after_transaction_commit = :always
 
     config.generators do |g|
       g.orm :active_record, primary_key_type: :uuid

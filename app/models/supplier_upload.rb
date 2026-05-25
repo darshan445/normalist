@@ -10,14 +10,19 @@ class SupplierUpload < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
 
+  after_commit :enqueue_schema_discovery, on: :create
+
+  attr_accessor :enqueue_schema_discovery_after_commit
+
   def attach_and_enqueue!(uploaded_file)
+    self.enqueue_schema_discovery_after_commit = true
+
     transaction do
       save!
       file.attach(uploaded_file)
       raise ActiveRecord::RecordInvalid, self unless file.attached?
     end
 
-    SupplierSchemaDiscoveryJob.perform_later(id)
     self
   end
 
@@ -27,5 +32,13 @@ class SupplierUpload < ApplicationRecord
 
   def broadcast_target
     "supplier_upload_#{id}"
+  end
+
+  private
+
+  def enqueue_schema_discovery
+    return unless enqueue_schema_discovery_after_commit
+
+    SupplierSchemaDiscoveryJob.perform_later(id)
   end
 end

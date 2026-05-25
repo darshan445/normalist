@@ -32,7 +32,6 @@ module Feeds
         content_type: "text/csv"
       )
 
-      SupplierSchemaDiscoveryJob.perform_later(upload.id)
       upload
     end
 

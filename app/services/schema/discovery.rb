@@ -33,6 +33,8 @@ module Schema
       else
         refresh_existing_profile!(headers, rows.size, rows)
       end
+    rescue ActiveStorage::FileNotFoundError
+      raise
     rescue StandardError => e
       failed(e.message)
     end
@@ -69,7 +71,9 @@ module Schema
       return [] if content.blank?
 
       Ingestion::FileNormalizer.call(content, filename: @upload.file.filename.to_s)
-    rescue ActiveStorage::FileNotFoundError, ArgumentError, StandardError => e
+    rescue ActiveStorage::FileNotFoundError
+      raise
+    rescue ArgumentError, StandardError => e
       Rails.logger.error("[Schema::Discovery] Failed to parse upload #{@upload.id}: #{e.class} — #{e.message}")
       []
     end
