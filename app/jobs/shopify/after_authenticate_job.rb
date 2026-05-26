@@ -32,6 +32,8 @@ module Shopify
         )
       end
 
+      Shopify::RegisterWebhooks.call(shop_domain: merchant.platform_domain)
+
       CatalogSyncJob.perform_later(merchant.id)
     end
   end

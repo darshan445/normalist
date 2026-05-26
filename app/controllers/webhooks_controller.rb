@@ -143,6 +143,12 @@ class WebhooksController < ApplicationController
   def verify_shopify_webhook
     @webhook_raw_body = request.body.read
     hmac = request.headers["X-Shopify-Hmac-Sha256"]
+
+    if hmac.blank?
+      head(:unauthorized)
+      return
+    end
+
     secret = ShopifyApp.configuration.secret
     digest = OpenSSL::HMAC.digest("sha256", secret, @webhook_raw_body)
     computed = Base64.strict_encode64(digest)
@@ -150,7 +156,7 @@ class WebhooksController < ApplicationController
     return if ActiveSupport::SecurityUtils.secure_compare(computed, hmac.to_s)
 
     Rails.logger.warn("[Webhook] HMAC verification failed")
-    head :unauthorized
+    head(:unauthorized)
   end
 
   class ProductsCreateHandler

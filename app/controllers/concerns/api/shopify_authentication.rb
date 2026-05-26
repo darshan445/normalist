@@ -44,6 +44,8 @@ module Api
 
     def ensure_shopify_install!(id_token)
       ShopifyApp::Auth::TokenExchange.perform(id_token)
+      shop_domain = shop_from_session_token(id_token)
+      Shopify::RegisterWebhooks.call(shop_domain: shop_domain) if shop_domain.present?
     rescue ShopifyAPI::Errors::InvalidJwtTokenError, ShopifyAPI::Errors::MissingJwtTokenError => e
       Rails.logger.warn("[Api::ShopifyAuthentication] Invalid session token: #{e.message}")
     rescue StandardError => e

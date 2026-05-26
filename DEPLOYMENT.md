@@ -92,6 +92,18 @@ On first boot, `web` runs `db:prepare` (migrate/create DB).
 | App URL | `https://normalist.app/app` |
 | Allowed redirection URL(s) | `https://api.normalist.space/auth/shopify/callback` |
 
+### Mandatory compliance webhooks (GDPR)
+
+Per [Shopify privacy compliance](https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance), these HTTPS endpoints on `HOST` must return **401** for invalid HMAC and **200** for valid deliveries:
+
+| Topic | Path |
+|-------|------|
+| `customers/data_request` | `https://api.normalist.space/webhooks/customers_data_request` |
+| `customers/redact` | `https://api.normalist.space/webhooks/customers_redact` |
+| `shop/redact` | `https://api.normalist.space/webhooks/shop_redact` |
+
+After deploy, reinstall the app on your dev store (or `kamal app exec -i 'bin/rails shopify_app:webhooks:install'`) so Shopify registers subscriptions. Token exchange also calls `Shopify::RegisterWebhooks` on first API session.
+
 The app UI and API are on different hosts by design: UI on `normalist.app`, OAuth/session on `api.normalist.space`.
 
 ## Postgres collation warning

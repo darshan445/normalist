@@ -23,6 +23,7 @@ module Gdpr
       log_event(
         topic: "customers/data_request",
         customer_ids: extract_customer_ids,
+        data_request_id: @webhook.dig("data_request", "id"),
         orders_requested: @webhook["orders_requested"]
       )
     end

@@ -13,7 +13,14 @@ end
 ShopifyApp.configure do |config|
   config.application_name = "NormaList"
   config.old_secret = ""
-  config.scope = "read_products, write_inventory, read_inventory"
+  config.scope = [
+    "read_products",
+    "write_products",
+    "read_inventory",
+    "write_inventory",
+    "read_locations",
+    "write_locations"
+  ].join(", ")
   config.embedded_app = true
   config.new_embedded_auth_strategy = true
   config.disable_webpacker = true
