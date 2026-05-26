@@ -26,30 +26,37 @@ RSpec.describe Shopify::InventoryWriter do
     )
   end
   let(:session) { instance_double(ShopifyAPI::Auth::Session) }
-  let(:inventory_level) { instance_double(ShopifyAPI::InventoryLevel) }
+  let(:graphql_client) { instance_double(Shopify::GraphqlClient) }
 
   before do
     allow(merchant).to receive(:with_shopify_session).and_yield(session)
-    allow(ShopifyAPI::InventoryLevel).to receive(:new).with(session: session).and_return(inventory_level)
-    allow(inventory_level).to receive(:connect)
-    allow(inventory_level).to receive(:set)
-    allow(inventory_level).to receive(:adjust)
+    allow(Shopify::GraphqlClient).to receive(:new).with(session).and_return(graphql_client)
+    allow(graphql_client).to receive(:mutate!).and_return({})
   end
 
-  it "sets absolute available quantity at the merchant location using platform_inventory_id" do
+  it "sets absolute available quantity using GraphQL inventorySetQuantities" do
     described_class.call(merchant: merchant, mapping: mapping, quantity: 42)
 
-    expect(inventory_level).to have_received(:connect).with(
-      inventory_item_id: "inv-99",
-      location_id: "loc-1",
-      relocate_if_necessary: false
+    expect(graphql_client).to have_received(:mutate!).with(
+      hash_including(payload_key: "inventoryActivate")
     )
-    expect(inventory_level).to have_received(:set).with(
-      inventory_item_id: "inv-99",
-      location_id: "loc-1",
-      available: 42
+    expect(graphql_client).to have_received(:mutate!).with(
+      hash_including(
+        payload_key: "inventorySetQuantities",
+        variables: hash_including(
+          input: hash_including(
+            ignoreCompareQuantity: true,
+            quantities: [
+              hash_including(
+                inventoryItemId: "gid://shopify/InventoryItem/inv-99",
+                locationId: "gid://shopify/Location/loc-1",
+                quantity: 42
+              )
+            ]
+          )
+        )
+      )
     )
-    expect(inventory_level).not_to have_received(:adjust)
   end
 
   it "adjusts available quantity when quantity_behavior is add" do
@@ -57,12 +64,22 @@ RSpec.describe Shopify::InventoryWriter do
 
     described_class.call(merchant: merchant, mapping: mapping, quantity: 5)
 
-    expect(inventory_level).to have_received(:adjust).with(
-      inventory_item_id: "inv-99",
-      location_id: "loc-1",
-      available_adjustment: 5
+    expect(graphql_client).to have_received(:mutate!).with(
+      hash_including(
+        payload_key: "inventoryAdjustQuantities",
+        variables: hash_including(
+          input: hash_including(
+            changes: [
+              hash_including(
+                delta: 5,
+                inventoryItemId: "gid://shopify/InventoryItem/inv-99",
+                locationId: "gid://shopify/Location/loc-1"
+              )
+            ]
+          )
+        )
+      )
     )
-    expect(inventory_level).not_to have_received(:set)
   end
 
   it "raises NotReady when platform_inventory_id is missing" do

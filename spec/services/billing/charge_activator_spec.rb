@@ -34,6 +34,7 @@ RSpec.describe Billing::ChargeActivator do
 
   let(:shared_charge_id) { "555666777" }
   let(:session_b) { instance_double(ShopifyAPI::Auth::Session) }
+  let(:graphql_client) { instance_double(Shopify::GraphqlClient) }
 
   let!(:subscription_a) do
     Subscription.create!(
@@ -47,10 +48,33 @@ RSpec.describe Billing::ChargeActivator do
     )
   end
 
+  let(:subscription_payload) do
+    {
+      "id" => "gid://shopify/AppSubscription/#{shared_charge_id}",
+      "name" => "NormaList",
+      "status" => "ACTIVE",
+      "test" => true,
+      "currentPeriodEnd" => 1.month.from_now.iso8601,
+      "lineItems" => [
+        {
+          "plan" => {
+            "pricingDetails" => {
+              "price" => { "amount" => "14.0" }
+            }
+          }
+        }
+      ]
+    }
+  end
+
+  before do
+    allow(Shopify::GraphqlClient).to receive(:new).and_return(graphql_client)
+  end
+
   it "reuses an existing subscription only for the same merchant" do
     session_a = instance_double(ShopifyAPI::Auth::Session)
 
-    expect(ShopifyAPI::RecurringApplicationCharge).not_to receive(:find)
+    expect(graphql_client).not_to receive(:query)
 
     result = described_class.call(
       merchant: merchant_a,
@@ -63,23 +87,9 @@ RSpec.describe Billing::ChargeActivator do
   end
 
   it "does not activate merchant B using merchant A subscription" do
-    charge = instance_double(
-      ShopifyAPI::RecurringApplicationCharge,
-      id: shared_charge_id,
-      status: "active",
-      price: 14,
-      billing_on: 1.month.from_now.to_date.to_s,
-      name: "NormaList",
-      trial_days: 0,
-      confirmation_url: "https://example.com",
-      return_url: "https://example.com",
-      test: true
+    allow(graphql_client).to receive(:query).and_return(
+      { "data" => { "node" => subscription_payload } }
     )
-
-    expect(ShopifyAPI::RecurringApplicationCharge).to receive(:find).with(
-      id: shared_charge_id,
-      session: session_b
-    ).and_return(charge)
 
     expect {
       described_class.call(

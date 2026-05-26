@@ -86,7 +86,7 @@ function statusPresentation(trialStatus) {
   if (trialStatus.trialing) {
     return {
       badge: { tone: "info", label: "Free trial" },
-      summary: `${trialStatus.trial_days_remaining} days remaining on your free trial.`,
+      summary: `${trialStatus.trial_days_remaining} days remaining on your 14-day free trial. No Shopify charge until you subscribe.`,
     };
   }
 
@@ -193,6 +193,11 @@ export default function SubscriptionBilling() {
               </Text>
               <Text as="p" variant="bodyMd" tone="subdued">
                 Everything included. No hidden fees. Cancel anytime.
+              </Text>
+              <Text as="p" variant="bodySm" tone="subdued">
+                Your 14-day free trial starts at install. After it ends, subscribe at{" "}
+                {formatMonthlyPrice(monthlyPrice)}/month through Shopify — billing only begins once
+                you approve the charge in Shopify Admin.
               </Text>
             </BlockStack>
 

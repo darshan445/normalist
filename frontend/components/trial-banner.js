@@ -36,8 +36,8 @@ export default function TrialBanner() {
       >
         <p>
           {trialStatus.trial_days_remaining} day
-          {trialStatus.trial_days_remaining === 1 ? "" : "s"} remaining on your free
-          trial. Subscribe to keep access after your trial ends.
+          {trialStatus.trial_days_remaining === 1 ? "" : "s"} remaining on your 14-day free
+          trial. No Shopify charge until you subscribe.
         </p>
       </Banner>
     );

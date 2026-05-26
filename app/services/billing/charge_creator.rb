@@ -2,6 +2,33 @@
 
 module Billing
   class ChargeCreator
+    CREATE_MUTATION = <<~GRAPHQL
+      mutation AppSubscriptionCreate(
+        $name: String!,
+        $lineItems: [AppSubscriptionLineItemInput!]!,
+        $returnUrl: URL!,
+        $test: Boolean,
+        $trialDays: Int
+      ) {
+        appSubscriptionCreate(
+          name: $name,
+          returnUrl: $returnUrl,
+          lineItems: $lineItems,
+          test: $test,
+          trialDays: $trialDays
+        ) {
+          userErrors {
+            field
+            message
+          }
+          appSubscription {
+            id
+          }
+          confirmationUrl
+        }
+      }
+    GRAPHQL
+
     def self.call(merchant:, session:)
       new(merchant, session).create
     end
@@ -13,25 +40,56 @@ module Billing
 
     def create
       plan = Plan.active.find_by!(key: "starter")
+      client = Shopify::GraphqlClient.new(@session)
 
-      charge = ShopifyAPI::RecurringApplicationCharge.new(session: @session)
-      charge.name = plan.name
-      charge.price = plan.price.to_f
-      charge.trial_days = 0
-      charge.test = !Rails.env.production?
-      charge.return_url = callback_url
-
-      charge.save!
-
-      Rails.logger.info(
-        "[ChargeCreator] charge created " \
-        "merchant=#{@merchant.id} " \
-        "charge_id=#{charge.id}"
+      payload = client.mutate!(
+        query: CREATE_MUTATION,
+        variables: {
+          name: plan.name,
+          returnUrl: callback_url,
+          test: !Rails.env.production?,
+          trialDays: 0,
+          lineItems: [
+            {
+              plan: {
+                appRecurringPricingDetails: {
+                  price: {
+                    amount: plan.price.to_f,
+                    currencyCode: "USD"
+                  },
+                  interval: "EVERY_30_DAYS"
+                }
+              }
+            }
+          ]
+        },
+        payload_key: "appSubscriptionCreate"
       )
 
-      charge.confirmation_url
+      confirmation_url = payload["confirmationUrl"]
+      subscription_id = Shopify::Gid.numeric_id(payload.dig("appSubscription", "id"))
+
+      Rails.logger.info(
+        "[ChargeCreator] subscription created " \
+        "merchant=#{@merchant.id} " \
+        "subscription_id=#{subscription_id}"
+      )
+
+      confirmation_url
+    rescue Shopify::GraphqlClient::UserErrors => e
+      message = user_message_for(e.message)
+      Rails.logger.error(
+        "[ChargeCreator] charge failed merchant=#{@merchant.id} error=#{e.message}"
+      )
+      raise ChargeCreationError.new(message, original: e)
+    rescue Shopify::GraphqlClient::Error => e
+      message = user_message_for(e.message)
+      Rails.logger.error(
+        "[ChargeCreator] charge failed merchant=#{@merchant.id} error=#{e.message}"
+      )
+      raise ChargeCreationError.new(message, original: e)
     rescue ShopifyAPI::Errors::HttpResponseError => e
-      message = user_message_for(e)
+      message = user_message_for(e.message)
       Rails.logger.error(
         "[ChargeCreator] charge failed merchant=#{@merchant.id} error=#{e.message}"
       )
@@ -40,10 +98,7 @@ module Billing
 
     private
 
-    def user_message_for(error)
-      body = parse_error_body(error)
-      detail = extract_error_detail(body)
-
+    def user_message_for(detail)
       if detail.to_s.match?(/invalid api key|access token|unrecognized login/i)
         "Shopify session expired. Reopen NormaList from Shopify Admin and try again."
       elsif detail.to_s.include?("Shopify partners")
@@ -55,28 +110,6 @@ module Billing
       else
         "Could not create subscription charge. Please try again or contact support."
       end
-    end
-
-    def extract_error_detail(body)
-      errors = body["errors"]
-      return errors if errors.is_a?(String)
-      return errors["base"].first if errors.is_a?(Hash) && errors["base"].is_a?(Array)
-      return errors["base"] if errors.is_a?(Hash) && errors["base"].present?
-      return errors.first if errors.is_a?(Array)
-
-      errors.to_s.presence
-    end
-
-    def parse_error_body(error)
-      response = error.response
-      return {} unless response.respond_to?(:body)
-
-      body = response.body
-      return body if body.is_a?(Hash)
-
-      JSON.parse(body.to_s)
-    rescue JSON::ParserError
-      {}
     end
 
     def callback_url

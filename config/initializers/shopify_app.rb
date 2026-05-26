@@ -15,11 +15,9 @@ ShopifyApp.configure do |config|
   config.old_secret = ""
   config.scope = [
     "read_products",
-    "write_products",
     "read_inventory",
     "write_inventory",
-    "read_locations",
-    "write_locations"
+    "read_locations"
   ].join(", ")
   config.embedded_app = true
   config.new_embedded_auth_strategy = true
@@ -28,7 +26,7 @@ ShopifyApp.configure do |config|
   config.root_url = frontend_app_url
 
   config.after_authenticate_job = { job: "Shopify::AfterAuthenticateJob", inline: false }
-  config.api_version = "2025-10"
+  config.api_version = "2026-04"
   config.shop_session_repository = "Merchant"
   config.log_level = :info
   config.reauth_on_access_scope_changes = true

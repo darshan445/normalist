@@ -155,13 +155,17 @@ export default function HomePage() {
               <li>Unlimited suppliers</li>
               <li>Unlimited variants</li>
               <li>Unlimited uploads</li>
-              <li>14 day free trial</li>
-              <li>No credit card required</li>
+              <li>14-day free trial — no Shopify charge during trial</li>
+              <li>$14/month after trial, billed through Shopify</li>
               <li>Cancel anytime</li>
             </ul>
             <div className="mt-8">
               <CtaButton className="w-full" />
             </div>
+            <p className="mt-4 text-sm text-slate-500">
+              Free for 14 days after install. Subscribe through Shopify when you&apos;re ready — no
+              charge is created until you approve billing.
+            </p>
           </div>
         </div>
       </section>

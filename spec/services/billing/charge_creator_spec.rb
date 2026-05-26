@@ -19,27 +19,16 @@ RSpec.describe Billing::ChargeCreator do
     )
   end
   let(:session) { instance_double(ShopifyAPI::Auth::Session, shop: merchant.platform_domain) }
+  let(:graphql_client) { instance_double(Shopify::GraphqlClient) }
 
-  def build_http_error(body_hash)
-    response = instance_double(
-      ShopifyAPI::Clients::HttpResponse,
-      body: body_hash,
-      code: 401
-    )
-    ShopifyAPI::Errors::HttpResponseError.new(response: response)
+  before do
+    allow(Shopify::GraphqlClient).to receive(:new).with(session).and_return(graphql_client)
   end
 
-  it "returns a friendly message when Shopify errors is a string" do
-    charge = instance_double(ShopifyAPI::RecurringApplicationCharge)
-    allow(ShopifyAPI::RecurringApplicationCharge).to receive(:new).with(session: session).and_return(charge)
-    allow(charge).to receive(:name=)
-    allow(charge).to receive(:price=)
-    allow(charge).to receive(:trial_days=)
-    allow(charge).to receive(:test=)
-    allow(charge).to receive(:return_url=)
-    allow(charge).to receive(:save!).and_raise(
-      build_http_error(
-        { "errors" => "[API] Invalid API key or access token (unrecognized login or wrong password)" }
+  it "returns a friendly message when Shopify returns an auth error" do
+    allow(graphql_client).to receive(:mutate!).and_raise(
+      Shopify::GraphqlClient::UserErrors.new(
+        [{ "message" => "[API] Invalid API key or access token (unrecognized login or wrong password)" }]
       )
     )
 
@@ -48,5 +37,17 @@ RSpec.describe Billing::ChargeCreator do
     }.to raise_error(Billing::ChargeCreationError) do |e|
       expect(e.user_message).to include("Reopen NormaList from Shopify Admin")
     end
+  end
+
+  it "returns the confirmation URL from GraphQL" do
+    allow(graphql_client).to receive(:mutate!).and_return(
+      {
+        "confirmationUrl" => "https://test.myshopify.com/admin/charges/confirm",
+        "appSubscription" => { "id" => "gid://shopify/AppSubscription/123" }
+      }
+    )
+
+    url = described_class.call(merchant: merchant, session: session)
+    expect(url).to eq("https://test.myshopify.com/admin/charges/confirm")
   end
 end

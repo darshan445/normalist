@@ -30,37 +30,21 @@ class CatalogSyncJob < ApplicationJob
   def sync_catalog(merchant, session)
     ShopifyAPI::Context.activate_session(session)
 
-    upsert_data = []
-    page_info = nil
-
-    loop do
-      products = ShopifyAPI::Product.all(
-        session: session,
-        limit: 250,
-        page_info: page_info
-      )
-
-      products.each do |product|
-        product.variants.each do |variant|
-          upsert_data << {
-            merchant_id: merchant.id,
-            product_title: product.title,
-            variant_title: variant.title,
-            master_sku: variant.sku.presence || "NO_SKU_#{variant.id}",
-            barcode: variant.barcode.presence,
-            platform: "shopify",
-            platform_variant_id: variant.id.to_s,
-            platform_inventory_id: variant.inventory_item_id.to_s,
-            status: "active",
-            needs_sku: variant.sku.blank?,
-            synced_at: Time.current
-          }
-        end
-      end
-
-      break unless ShopifyAPI::Product.next_page?
-
-      page_info = ShopifyAPI::Product.next_page_info
+    rows = Shopify::CatalogPull.call(session: session)
+    upsert_data = rows.map do |row|
+      {
+        merchant_id: merchant.id,
+        product_title: row.product_title,
+        variant_title: row.variant_title,
+        master_sku: row.master_sku,
+        barcode: row.barcode,
+        platform: "shopify",
+        platform_variant_id: row.platform_variant_id,
+        platform_inventory_id: row.platform_inventory_id,
+        status: "active",
+        needs_sku: row.needs_sku,
+        synced_at: Time.current
+      }
     end
 
     if upsert_data.any?
@@ -91,14 +75,13 @@ class CatalogSyncJob < ApplicationJob
   end
 
   def fetch_and_save_location(merchant, session)
-    locations = ShopifyAPI::Location.all(session: session)
-    primary = locations.first
-    return unless primary
+    location_id = Shopify::PrimaryLocation.call(session: session)
+    return if location_id.blank?
 
-    merchant.update!(location_id: primary.id.to_s)
+    merchant.update!(location_id: location_id)
 
     Rails.logger.info(
-      "[CatalogSyncJob] location saved location_id=#{primary.id}"
+      "[CatalogSyncJob] location saved location_id=#{location_id}"
     )
   end
 end

@@ -32,9 +32,15 @@ export default function TermsPage() {
         <section>
           <h2 className="text-xl font-semibold text-slate-900">3. Subscription and billing</h2>
           <ul className="mt-3 list-disc space-y-2 pl-6">
-            <li>$14 per month after a 14-day free trial</li>
-            <li>Billed through Shopify</li>
-            <li>Cancel anytime from your Shopify admin</li>
+            <li>
+              14-day free trial when you install {appName}. No Shopify subscription charge is created
+              during the trial — you can use the app without approving billing.
+            </li>
+            <li>
+              After the trial, subscribe at $14 per month. Billing is processed through Shopify&apos;s
+              Billing API when you approve the recurring charge in Shopify Admin.
+            </li>
+            <li>Cancel anytime from the app or your Shopify admin billing settings.</li>
           </ul>
         </section>
 

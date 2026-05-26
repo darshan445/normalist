@@ -2,6 +2,21 @@
 
 module Billing
   class ChargeCanceller
+    CANCEL_MUTATION = <<~GRAPHQL
+      mutation AppSubscriptionCancel($id: ID!) {
+        appSubscriptionCancel(id: $id) {
+          userErrors {
+            field
+            message
+          }
+          appSubscription {
+            id
+            status
+          }
+        }
+      }
+    GRAPHQL
+
     def self.call(merchant:, session:)
       new(merchant, session).cancel
     end
@@ -26,9 +41,11 @@ module Billing
         return { success: true, already_cancelled: true }
       end
 
-      ShopifyAPI::RecurringApplicationCharge.delete(
-        id: subscription.shopify_charge_id,
-        session: @session
+      client = Shopify::GraphqlClient.new(@session)
+      client.mutate!(
+        query: CANCEL_MUTATION,
+        variables: { id: Shopify::Gid.app_subscription(subscription.shopify_charge_id) },
+        payload_key: "appSubscriptionCancel"
       )
 
       subscription.update!(
@@ -53,8 +70,20 @@ module Billing
       )
 
       { success: true, subscription: subscription }
+    rescue Shopify::GraphqlClient::UserErrors => e
+      message = user_message_for(e.message)
+      Rails.logger.error(
+        "[ChargeCanceller] cancel failed merchant=#{@merchant.id} error=#{e.message}"
+      )
+      raise ChargeCancellationError.new(message, original: e)
+    rescue Shopify::GraphqlClient::Error => e
+      message = user_message_for(e.message)
+      Rails.logger.error(
+        "[ChargeCanceller] cancel failed merchant=#{@merchant.id} error=#{e.message}"
+      )
+      raise ChargeCancellationError.new(message, original: e)
     rescue ShopifyAPI::Errors::HttpResponseError => e
-      message = user_message_for(e)
+      message = user_message_for(e.message)
       Rails.logger.error(
         "[ChargeCanceller] cancel failed merchant=#{@merchant.id} error=#{e.message}"
       )
@@ -63,25 +92,8 @@ module Billing
 
     private
 
-    def user_message_for(error)
-      body = parse_error_body(error)
-      detail = body.dig("errors", "base")
-      detail = detail.first if detail.is_a?(Array)
-      detail = detail.presence || body.dig("errors")&.to_s.presence
-
+    def user_message_for(detail)
       detail.presence || "Could not cancel subscription. Please try again or contact support."
-    end
-
-    def parse_error_body(error)
-      response = error.response
-      return {} unless response.respond_to?(:body)
-
-      body = response.body
-      return body if body.is_a?(Hash)
-
-      JSON.parse(body.to_s)
-    rescue JSON::ParserError
-      {}
     end
   end
 end
