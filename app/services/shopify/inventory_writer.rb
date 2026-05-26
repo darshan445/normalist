@@ -62,6 +62,18 @@ module Shopify
       }
     GRAPHQL
 
+    AVAILABLE_QUERY = <<~GRAPHQL
+      query AvailableQuantity($inventoryItemId: ID!, $locationId: ID!) {
+        inventoryItem(id: $inventoryItemId) {
+          inventoryLevel(locationId: $locationId) {
+            quantities(names: ["available"]) {
+              quantity
+            }
+          }
+        }
+      }
+    GRAPHQL
+
     def self.call(merchant:, mapping:, quantity:)
       new(merchant: merchant, mapping: mapping, quantity: quantity).call
     end
@@ -165,6 +177,8 @@ module Shopify
     end
 
     def adjust_quantity!(client, inventory_item_id, location_id)
+      change_from = fetch_available_quantity(client, inventory_item_id, location_id)
+
       client.mutate!(
         query: ADJUST_MUTATION,
         variables: {
@@ -176,7 +190,8 @@ module Shopify
               {
                 delta: @quantity,
                 inventoryItemId: Gid.inventory_item(inventory_item_id),
-                locationId: Gid.location(location_id)
+                locationId: Gid.location(location_id),
+                changeFromQuantity: change_from
               }
             ]
           },
@@ -184,6 +199,22 @@ module Shopify
         },
         payload_key: "inventoryAdjustQuantities"
       )
+    end
+
+    def fetch_available_quantity(client, inventory_item_id, location_id)
+      body = client.query(
+        query: AVAILABLE_QUERY,
+        variables: {
+          inventoryItemId: Gid.inventory_item(inventory_item_id),
+          locationId: Gid.location(location_id)
+        }
+      )
+
+      quantity = body.dig(
+        "data", "inventoryItem", "inventoryLevel", "quantities", 0, "quantity"
+      )
+
+      quantity.nil? ? 0 : quantity.to_i
     end
   end
 end

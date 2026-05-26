@@ -62,8 +62,15 @@ RSpec.describe Shopify::InventoryWriter do
   it "adjusts available quantity when quantity_behavior is add" do
     mapping.update!(quantity_behavior: "add")
 
+    allow(graphql_client).to receive(:query).and_return(
+      { "data" => { "inventoryItem" => { "inventoryLevel" => { "quantities" => [{ "quantity" => 10 }] } } } }
+    )
+
     described_class.call(merchant: merchant, mapping: mapping, quantity: 5)
 
+    expect(graphql_client).to have_received(:query).with(
+      hash_including(variables: hash_including(inventoryItemId: "gid://shopify/InventoryItem/inv-99"))
+    )
     expect(graphql_client).to have_received(:mutate!).with(
       hash_including(
         payload_key: "inventoryAdjustQuantities",
@@ -72,6 +79,7 @@ RSpec.describe Shopify::InventoryWriter do
             changes: [
               hash_including(
                 delta: 5,
+                changeFromQuantity: 10,
                 inventoryItemId: "gid://shopify/InventoryItem/inv-99",
                 locationId: "gid://shopify/Location/loc-1"
               )
