@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Shopify
-  # Registers mandatory compliance + app webhooks with Shopify after install/token exchange.
+  # Registers shop-specific webhooks with Shopify after install/token exchange.
+  # GDPR/privacy webhooks are app-level (shopify.app.toml), not registered via API.
   class RegisterWebhooks
     def self.call(shop_domain:)
       new(shop_domain).call

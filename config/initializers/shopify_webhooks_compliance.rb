@@ -35,6 +35,35 @@ module ShopifyAppWebhooksControllerCompliance
   end
 end
 
+# Mandatory GDPR webhooks use PrivacyWebhookHandlers (not Registry.add_registration).
+module ShopifyAppWebhooksControllerPrivacyDispatch
+  def receive
+    params.permit!
+
+    webhook_request = ShopifyAPI::Webhooks::Request.new(
+      raw_body: request.raw_post,
+      headers: request.headers.to_h
+    )
+
+    privacy_handler = Shopify::PrivacyWebhookHandlers.handler_for(webhook_request.topic)
+    if privacy_handler
+      privacy_handler.handle(
+        data: ShopifyAPI::Webhooks::WebhookMetadata.new(
+          topic: webhook_request.topic,
+          shop: webhook_request.shop,
+          body: webhook_request.parsed_body,
+          api_version: webhook_request.api_version,
+          webhook_id: webhook_request.webhook_id
+        )
+      )
+      head(:ok)
+      return
+    end
+
+    super
+  end
+end
+
 def apply_shopify_webhook_compliance_patches!
   if defined?(ShopifyApp::WebhookVerification) &&
       !ShopifyApp::WebhookVerification.ancestors.include?(ShopifyAppWebhookVerificationFix)
@@ -44,6 +73,11 @@ def apply_shopify_webhook_compliance_patches!
   if defined?(ShopifyApp::WebhooksController) &&
       !ShopifyApp::WebhooksController.included_modules.include?(ShopifyAppWebhooksControllerCompliance)
     ShopifyApp::WebhooksController.include(ShopifyAppWebhooksControllerCompliance)
+  end
+
+  if defined?(ShopifyApp::WebhooksController) &&
+      !ShopifyApp::WebhooksController.ancestors.include?(ShopifyAppWebhooksControllerPrivacyDispatch)
+    ShopifyApp::WebhooksController.prepend(ShopifyAppWebhooksControllerPrivacyDispatch)
   end
 end
 

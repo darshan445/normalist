@@ -33,11 +33,9 @@ ShopifyApp.configure do |config|
   config.log_level = :info
   config.reauth_on_access_scope_changes = true
   config.check_session_expiry_date = true
+  # GDPR/privacy topics are app-level only — see shopify.app.toml [webhooks.privacy_compliance].
   config.webhooks = [
     { topic: "app/uninstalled", address: "webhooks/app_uninstalled" },
-    { topic: "customers/data_request", address: "webhooks/customers_data_request" },
-    { topic: "customers/redact", address: "webhooks/customers_redact" },
-    { topic: "shop/redact", address: "webhooks/shop_redact" },
     { topic: "products/create", address: "webhooks/products/create" },
     { topic: "products/update", address: "webhooks/products/update" },
     { topic: "products/delete", address: "webhooks/products/delete" },
@@ -74,11 +72,13 @@ Rails.application.config.to_prepare do
 end
 
 def register_shopify_webhook_handlers!
-  handlers = {
+  register_shopify_standard_webhook_handlers!
+  register_shopify_privacy_webhook_handlers!
+end
+
+def register_shopify_standard_webhook_handlers!
+  standard_handlers = {
     "app/uninstalled" => [ "webhooks/app_uninstalled", Shopify::AppUninstalledHandler.new ],
-    "customers/data_request" => [ "webhooks/customers_data_request", Shopify::CustomersDataRequestHandler.new ],
-    "customers/redact" => [ "webhooks/customers_redact", Shopify::CustomersRedactHandler.new ],
-    "shop/redact" => [ "webhooks/shop_redact", Shopify::ShopRedactHandler.new ],
     "products/create" => [ "webhooks/products/create", WebhooksController::ProductsCreateHandler.new ],
     "products/update" => [ "webhooks/products/update", WebhooksController::ProductsUpdateHandler.new ],
     "products/delete" => [ "webhooks/products/delete", WebhooksController::ProductsDeleteHandler.new ],
@@ -104,7 +104,7 @@ def register_shopify_webhook_handlers!
     ]
   }
 
-  handlers.each do |topic, (path, handler)|
+  standard_handlers.each do |topic, (path, handler)|
     ShopifyAPI::Webhooks::Registry.add_registration(
       topic: topic,
       delivery_method: :http,
@@ -112,4 +112,8 @@ def register_shopify_webhook_handlers!
       handler: handler
     )
   end
+end
+
+def register_shopify_privacy_webhook_handlers!
+  Shopify::PrivacyWebhookHandlers.register!
 end

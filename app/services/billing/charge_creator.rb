@@ -42,11 +42,11 @@ module Billing
 
     def user_message_for(error)
       body = parse_error_body(error)
-      detail = body.dig("errors", "base")
-      detail = detail.first if detail.is_a?(Array)
-      detail = detail.presence || body.dig("errors")&.to_s.presence
+      detail = extract_error_detail(body)
 
-      if detail.to_s.include?("Shopify partners")
+      if detail.to_s.match?(/invalid api key|access token|unrecognized login/i)
+        "Shopify session expired. Reopen NormaList from Shopify Admin and try again."
+      elsif detail.to_s.include?("Shopify partners")
         "Billing is not set up for this app yet. Create the app in the " \
         "Shopify Partners dashboard and install it on your development store " \
         "from there (not as a custom app owned by the shop)."
@@ -55,6 +55,16 @@ module Billing
       else
         "Could not create subscription charge. Please try again or contact support."
       end
+    end
+
+    def extract_error_detail(body)
+      errors = body["errors"]
+      return errors if errors.is_a?(String)
+      return errors["base"].first if errors.is_a?(Hash) && errors["base"].is_a?(Array)
+      return errors["base"] if errors.is_a?(Hash) && errors["base"].present?
+      return errors.first if errors.is_a?(Array)
+
+      errors.to_s.presence
     end
 
     def parse_error_body(error)

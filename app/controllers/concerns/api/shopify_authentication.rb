@@ -16,8 +16,13 @@ module Api
       id_token = bearer_token
       shop_domain = shop_from_session_token(id_token)
 
-      if id_token.present? && !merchant_connected?(shop_domain)
-        ensure_shopify_install!(id_token)
+      if id_token.present?
+        if merchant_connected?(shop_domain)
+          # OAuth may leave a stale offline token; embedded JWT exchange is authoritative.
+          Shopify::RefreshOfflineToken.call(id_token: id_token)
+        else
+          ensure_shopify_install!(id_token)
+        end
         shop_domain = shop_from_session_token(id_token)
       end
 

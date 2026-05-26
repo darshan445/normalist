@@ -102,7 +102,13 @@ Per [Shopify privacy compliance](https://shopify.dev/docs/apps/build/compliance/
 | `customers/redact` | `https://api.normalist.space/webhooks/customers_redact` |
 | `shop/redact` | `https://api.normalist.space/webhooks/shop_redact` |
 
-After deploy, reinstall the app on your dev store (or `kamal app exec -i 'bin/rails shopify_app:webhooks:install'`) so Shopify registers subscriptions. Token exchange also calls `Shopify::RegisterWebhooks` on first API session.
+GDPR topics are **not** registered per-shop via the Admin API (`shopify_api` blocks them). URLs are declared in `shopify.app.toml` under `[webhooks.privacy_compliance]`. Push to Partners:
+
+```bash
+shopify app deploy
+```
+
+Shop-specific webhooks (products, inventory, `app/uninstalled`, etc.) are still registered on install via `ShopifyApp::WebhooksManager` / `Shopify::RegisterWebhooks` after OAuth or token exchange.
 
 The app UI and API are on different hosts by design: UI on `normalist.app`, OAuth/session on `api.normalist.space`.
 
