@@ -9,8 +9,6 @@ class CustomersDataRequestJob < ApplicationJob
       return
     end
 
-    merchant.with_shopify_session do
-      # GDPR: export customer data when requested
-    end
+    Gdpr::CustomerDataCompliance.handle_data_request(merchant: merchant, webhook: webhook)
   end
 end

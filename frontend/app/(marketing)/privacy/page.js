@@ -26,7 +26,10 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold text-slate-900">2. Data we collect</h2>
           <ul className="mt-3 list-disc space-y-2 pl-6">
             <li>Shopify store domain</li>
-            <li>Shopify access token (encrypted)</li>
+            <li>
+              Shopify access token and refresh token (stored in our database with restricted
+              access; not shown in the merchant-facing app UI)
+            </li>
             <li>Product and variant data from your store</li>
             <li>Supplier inventory files you upload</li>
             <li>Supplier code to SKU mappings you create</li>
@@ -45,7 +48,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-slate-900">4. Data we do NOT collect</h2>
           <ul className="mt-3 list-disc space-y-2 pl-6">
-            <li>Customer personal information</li>
+            <li>Customer personal information (names, emails, addresses, etc.)</li>
             <li>Order data</li>
             <li>Payment information</li>
             <li>Any data beyond what&apos;s needed for inventory sync</li>
@@ -53,24 +56,41 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-slate-900">5. Data retention</h2>
+          <h2 className="text-xl font-semibold text-slate-900">
+            5. GDPR and Shopify mandatory webhooks
+          </h2>
           <p className="mt-3 leading-relaxed">
-            Your data is retained while your subscription is active. Data is deleted within 30
-            days of uninstalling the app from your Shopify store.
+            Shopify may send mandatory compliance webhooks when a customer requests their data or
+            when data must be redacted. {appName} is built for supplier inventory sync only and does
+            not store Shopify customer personal data in our database. When we receive these
+            webhooks, we log the request for audit purposes and take no export or redaction action
+            because there is no customer data to provide or delete. Shop data is removed when you
+            uninstall the app, via the shop/redact webhook (see retention below).
           </p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-slate-900">6. Third party services</h2>
+          <h2 className="text-xl font-semibold text-slate-900">6. Data retention</h2>
+          <p className="mt-3 leading-relaxed">
+            Your data is retained while your subscription is active. Data is deleted within 30 days
+            of uninstalling the app from your Shopify store.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold text-slate-900">7. Third party services</h2>
           <ul className="mt-3 list-disc space-y-2 pl-6">
             <li>Shopify (store integration)</li>
             <li>Google (Sheets integration)</li>
-            <li>Gemini AI (column detection only; snippet data is not stored by Google)</li>
+            <li>
+              Gemini AI (column detection only; only a small snippet of each file is sent, not the
+              full upload)
+            </li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-slate-900">7. Contact</h2>
+          <h2 className="text-xl font-semibold text-slate-900">8. Contact</h2>
           <p className="mt-3 leading-relaxed">
             Questions about this policy:{" "}
             <a

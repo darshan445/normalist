@@ -9,8 +9,6 @@ class CustomersRedactJob < ApplicationJob
       return
     end
 
-    merchant.with_shopify_session do
-      # GDPR: redact customer data
-    end
+    Gdpr::CustomerDataCompliance.handle_redact(merchant: merchant, webhook: webhook)
   end
 end

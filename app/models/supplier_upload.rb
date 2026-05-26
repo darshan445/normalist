@@ -15,6 +15,8 @@ class SupplierUpload < ApplicationRecord
   attr_accessor :enqueue_schema_discovery_after_commit
 
   def attach_and_enqueue!(uploaded_file)
+    Ingestion::UploadValidator.validate!(uploaded_file)
+
     self.enqueue_schema_discovery_after_commit = true
 
     transaction do

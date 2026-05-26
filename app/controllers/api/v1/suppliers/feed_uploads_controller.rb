@@ -26,6 +26,9 @@ module Api
 
           begin
             upload.attach_and_enqueue!(params[:file])
+          rescue ArgumentError => e
+            render(json: { errors: [ e.message ] }, status: :unprocessable_entity)
+            return
           rescue ActiveRecord::RecordInvalid
             render(json: { errors: upload.errors.full_messages }, status: :unprocessable_entity)
             return

@@ -16,7 +16,7 @@ module Billing
       charge_id = extract_charge_id(subscription_data)
       status = subscription_data["status"].to_s.downcase
 
-      subscription = Subscription.find_by(shopify_charge_id: charge_id)
+      subscription = @merchant.subscriptions.find_by(shopify_charge_id: charge_id)
 
       unless subscription
         if status == "active"

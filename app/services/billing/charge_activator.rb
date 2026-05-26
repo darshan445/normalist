@@ -15,7 +15,7 @@ module Billing
     ACTIVATABLE_STATUSES = %w[accepted active].freeze
 
     def activate
-      existing = Subscription.find_by(shopify_charge_id: @charge_id.to_s)
+      existing = @merchant.subscriptions.find_by(shopify_charge_id: @charge_id.to_s)
       if existing&.active?
         @merchant.update!(plan_status: "active") unless @merchant.subscribed?
         return { success: true, subscription: existing }

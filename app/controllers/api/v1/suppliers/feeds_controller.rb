@@ -41,7 +41,7 @@ module Api
         rescue Ingestion::GoogleSheetsFetcher::Error => e
           render_google_sheets_error(e)
         rescue ArgumentError => e
-          render(json: { error: "profile_detection_failed", message: e.message }, status: :unprocessable_entity)
+          render(json: { errors: [ e.message ] }, status: :unprocessable_entity)
         end
 
         def update
@@ -68,7 +68,7 @@ module Api
         rescue Ingestion::GoogleSheetsFetcher::Error => e
           render_google_sheets_error(e)
         rescue ArgumentError => e
-          render(json: { error: "profile_detection_failed", message: e.message }, status: :unprocessable_entity)
+          render(json: { errors: [ e.message ] }, status: :unprocessable_entity)
         end
 
         private

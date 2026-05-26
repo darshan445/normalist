@@ -1,5 +1,12 @@
 require "active_support/core_ext/integer/time"
 
+# Default env for test suite (ShopifyApp initializer requires these).
+ENV["SHOPIFY_CLIENT_ID"] ||= "test_shopify_client_id"
+ENV["SHOPIFY_CLIENT_SECRET"] ||= "test_shopify_client_secret"
+ENV["HOST"] ||= "https://api.test.example"
+ENV["FRONTEND_URL"] ||= "https://app.test.example"
+ENV["CORS_ORIGINS"] ||= "https://app.test.example"
+
 Rails.application.configure do
   config.enable_reloading = false
   config.eager_load = ENV["CI"].present?
