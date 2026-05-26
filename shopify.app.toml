@@ -8,9 +8,21 @@ embedded = true
 [webhooks]
 api_version = "2026-04"
 
+  [[webhooks.subscriptions]]
+  uri = "https://api.normalist.space/webhooks/customers_data_request"
+  compliance_topics = [ "customers/data_request" ]
+
+  [[webhooks.subscriptions]]
+  uri = "https://api.normalist.space/webhooks/customers_redact"
+  compliance_topics = [ "customers/redact" ]
+
+  [[webhooks.subscriptions]]
+  uri = "https://api.normalist.space/webhooks/shop_redact"
+  compliance_topics = [ "shop/redact" ]
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_inventory,read_inventory,write_locations,read_locations,read_products,write_products"
+scopes = "read_inventory,read_locations,read_products,write_inventory,write_locations,write_products"
 optional_scopes = [ ]
 use_legacy_install_flow = false
 
