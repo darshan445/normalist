@@ -22,8 +22,6 @@ module ShopifyAppWebhookVerificationFix
   end
 end
 
-ShopifyApp::WebhookVerification.prepend(ShopifyAppWebhookVerificationFix)
-
 module ShopifyAppWebhooksControllerCompliance
   extend ActiveSupport::Concern
 
@@ -37,4 +35,17 @@ module ShopifyAppWebhooksControllerCompliance
   end
 end
 
-ShopifyApp::WebhooksController.include(ShopifyAppWebhooksControllerCompliance)
+def apply_shopify_webhook_compliance_patches!
+  if defined?(ShopifyApp::WebhookVerification) &&
+      !ShopifyApp::WebhookVerification.ancestors.include?(ShopifyAppWebhookVerificationFix)
+    ShopifyApp::WebhookVerification.prepend(ShopifyAppWebhookVerificationFix)
+  end
+
+  if defined?(ShopifyApp::WebhooksController) &&
+      !ShopifyApp::WebhooksController.included_modules.include?(ShopifyAppWebhooksControllerCompliance)
+    ShopifyApp::WebhooksController.include(ShopifyAppWebhooksControllerCompliance)
+  end
+end
+
+Rails.application.config.after_initialize { apply_shopify_webhook_compliance_patches! }
+Rails.application.config.to_prepare { apply_shopify_webhook_compliance_patches! }
